@@ -56,8 +56,9 @@ export default function CalendarPage() {
     return blockedDates.filter(b => b.propertyId === selectedProperty);
   }, [blockedDates, selectedProperty]);
 
-  const allDisplayBookings = useMemo(() => {
-    const blockBookings: Booking[] = selectedPropertyBlocks.map(b => ({
+  // Convert ALL blocked dates to booking objects for display
+  const allBlockedAsBookings = useMemo((): Booking[] => {
+    return blockedDates.map(b => ({
       id: b.id,
       propertyId: b.propertyId,
       propertyName: properties.find(p => p.id === b.propertyId)?.name || '',
@@ -72,8 +73,17 @@ export default function CalendarPage() {
       status: 'blocked' as const,
       uid: `block-${b.id}`,
     }));
-    return [...filteredBookings, ...blockBookings];
-  }, [filteredBookings, selectedPropertyBlocks, properties]);
+  }, [blockedDates, properties]);
+
+  // All bookings + blocked dates merged (for multi-property view)
+  const allBookingsWithBlocks = useMemo(() => {
+    return [...bookings, ...allBlockedAsBookings];
+  }, [bookings, allBlockedAsBookings]);
+
+  const allDisplayBookings = useMemo(() => {
+    const selectedBlocks = allBlockedAsBookings.filter(b => b.propertyId === selectedProperty);
+    return [...filteredBookings, ...selectedBlocks];
+  }, [filteredBookings, allBlockedAsBookings, selectedProperty]);
 
   const handleBlockDates = () => {
     if (!selectedDate || !blockEndDate || !selectedProperty) return;
@@ -138,7 +148,7 @@ export default function CalendarPage() {
           year={year}
           month={month}
           properties={properties}
-          bookings={bookings}
+          bookings={allBookingsWithBlocks}
           onMonthChange={(y, m) => { setYear(y); setMonth(m); }}
         />
       )}

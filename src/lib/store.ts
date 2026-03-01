@@ -25,7 +25,20 @@ function setItem(key: string, value: unknown) {
 
 // Properties
 export function getProperties(): Property[] {
-  return getItem<Property[]>(STORAGE_KEYS.properties, []);
+  const props = getItem<Property[]>(STORAGE_KEYS.properties, []);
+  // Ensure property colors match the current palette
+  let updated = false;
+  props.forEach((p, i) => {
+    const expectedColor = PROPERTY_COLORS[i % PROPERTY_COLORS.length];
+    if (p.color !== expectedColor) {
+      p.color = expectedColor;
+      updated = true;
+    }
+  });
+  if (updated) {
+    setItem(STORAGE_KEYS.properties, props);
+  }
+  return props;
 }
 
 export function saveProperty(property: Omit<Property, 'id' | 'createdAt' | 'color'>): Property {

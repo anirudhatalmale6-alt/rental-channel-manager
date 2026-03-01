@@ -11,8 +11,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SyncIcon from '@mui/icons-material/Sync';
 import AddIcon from '@mui/icons-material/Add';
 import { useRouter } from 'next/navigation';
-import { getProperties, getBookings } from '@/lib/store';
-import { Property, Booking } from '@/types';
+import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
+import { Property, Booking, BlockedDate } from '@/types';
 import { isDateInRange, toDateString, formatDate } from '@/lib/date-utils';
 import WeekStrip from '@/components/WeekStrip';
 import ChannelIcon from '@/components/ChannelIcon';
@@ -26,8 +26,27 @@ export default function HomePage() {
   const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
-    setProperties(getProperties());
-    setBookings(getBookings());
+    const props = getProperties();
+    setProperties(props);
+    const allBookings = getBookings();
+    // Merge app-created blocked dates into bookings for display
+    const blocked = getBlockedDates();
+    const blockedAsBookings: Booking[] = blocked.map(b => ({
+      id: b.id,
+      propertyId: b.propertyId,
+      propertyName: props.find(p => p.id === b.propertyId)?.name || '',
+      guestName: b.reason || 'Blocked',
+      checkIn: b.startDate,
+      checkOut: b.endDate,
+      adults: 0,
+      children: 0,
+      income: 0,
+      currency: 'EUR',
+      channel: 'blocked' as const,
+      status: 'blocked' as const,
+      uid: `block-${b.id}`,
+    }));
+    setBookings([...allBookings, ...blockedAsBookings]);
   }, []);
 
   const today = new Date();
