@@ -30,6 +30,7 @@ export default function HomePage() {
     setProperties(props);
     const allBookings = getBookings();
     // Merge app-created blocked dates into bookings for display
+    // (only if not already present from iCal sync)
     const blocked = getBlockedDates();
     const blockedAsBookings: Booking[] = blocked.map(b => ({
       id: b.id,
@@ -46,7 +47,7 @@ export default function HomePage() {
       status: 'blocked' as const,
       uid: `block-${b.id}`,
     }));
-    setBookings([...allBookings, ...blockedAsBookings]);
+    setBookings(deduplicateBookings([...allBookings, ...blockedAsBookings]));
   }, []);
 
   const today = new Date();
@@ -100,11 +101,28 @@ export default function HomePage() {
     setSyncing(true);
     try {
       await syncAllProperties();
-      setBookings(getBookings());
+      const synced = getBookings();
+      const blocked = getBlockedDates();
+      const blockedAsBookings: Booking[] = blocked.map(b => ({
+        id: b.id,
+        propertyId: b.propertyId,
+        propertyName: properties.find(p => p.id === b.propertyId)?.name || '',
+        guestName: b.reason || 'Blocked',
+        checkIn: b.startDate,
+        checkOut: b.endDate,
+        adults: 0,
+        children: 0,
+        income: 0,
+        currency: 'EUR',
+        channel: 'blocked' as const,
+        status: 'blocked' as const,
+        uid: `block-${b.id}`,
+      }));
+      setBookings(deduplicateBookings([...synced, ...blockedAsBookings]));
     } finally {
       setSyncing(false);
     }
-  }, []);
+  }, [properties]);
 
   if (properties.length === 0) {
     return (

@@ -15,7 +15,7 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import CalendarViewMonthIcon from '@mui/icons-material/CalendarViewMonth';
 import { getProperties, getBookings, addBlockedDate, getBlockedDates, removeBlockedDate } from '@/lib/store';
 import { Property, Booking, BlockedDate } from '@/types';
-import { isDateInRange } from '@/lib/date-utils';
+import { isDateInRange, deduplicateBookings } from '@/lib/date-utils';
 import PropertySelector from '@/components/PropertySelector';
 import MonthCalendar from '@/components/MonthCalendar';
 import BookingCard from '@/components/BookingCard';
@@ -75,14 +75,14 @@ export default function CalendarPage() {
     }));
   }, [blockedDates, properties]);
 
-  // All bookings + blocked dates merged (for multi-property view)
+  // All bookings + blocked dates merged and deduplicated (for multi-property view)
   const allBookingsWithBlocks = useMemo(() => {
-    return [...bookings, ...allBlockedAsBookings];
+    return deduplicateBookings([...bookings, ...allBlockedAsBookings]);
   }, [bookings, allBlockedAsBookings]);
 
   const allDisplayBookings = useMemo(() => {
     const selectedBlocks = allBlockedAsBookings.filter(b => b.propertyId === selectedProperty);
-    return [...filteredBookings, ...selectedBlocks];
+    return deduplicateBookings([...filteredBookings, ...selectedBlocks]);
   }, [filteredBookings, allBlockedAsBookings, selectedProperty]);
 
   const handleBlockDates = () => {

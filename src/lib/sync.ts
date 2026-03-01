@@ -1,5 +1,6 @@
 import { getProperties, getBookings, saveBookings, updateSyncStatus } from './store';
 import { parseICalData } from './ical-parser';
+import { deduplicateBookings } from './date-utils';
 import { Booking, Channel } from '@/types';
 
 async function fetchIcal(url: string): Promise<string> {
@@ -41,9 +42,9 @@ export async function syncAllProperties(): Promise<void> {
   const properties = getProperties();
   const existingBookings = getBookings();
 
-  // Keep manually added bookings and blocked dates
+  // Keep only manually added bookings (not iCal-sourced blocked entries)
   const manualBookings = existingBookings.filter(
-    b => b.channel === 'manual' || b.status === 'blocked'
+    b => b.channel === 'manual'
   );
 
   const syncedBookings: Booking[] = [...manualBookings];
@@ -74,5 +75,7 @@ export async function syncAllProperties(): Promise<void> {
     }
   }
 
-  saveBookings(syncedBookings);
+  // Deduplicate: same property + same dates from multiple channels → keep one
+  // (e.g. Airbnb, Vrbo, Expedia all export "Not available" for the same blocked dates)
+  saveBookings(deduplicateBookings(syncedBookings));
 }
