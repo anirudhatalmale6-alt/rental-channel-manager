@@ -5,6 +5,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import theme from '@/lib/theme';
 import BottomNav from '@/components/BottomNav';
+import SWRegister from '@/components/SWRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               {children}
             </Box>
             <BottomNav />
+            <SWRegister />
           </ThemeProvider>
         </AppRouterCacheProvider>
       </body>
