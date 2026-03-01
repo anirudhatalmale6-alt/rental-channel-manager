@@ -61,14 +61,22 @@ export default function HomePage() {
     });
   }, [weekDates]);
 
-  // Upcoming bookings (sorted by check-in)
-  const todayStr = toDateString(today.getFullYear(), today.getMonth(), today.getDate());
-  const upcomingBookings = useMemo(() => {
+  // Occupancies for the displayed week — only bookings that overlap with the week shown
+  const weekEndDate = useMemo(() => {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + 6);
+    return toDateString(d.getFullYear(), d.getMonth(), d.getDate());
+  }, [weekStart]);
+
+  const weekBookings = useMemo(() => {
+    const weekStartStr = weekDates[0];
+    const weekEndStr = weekDates[6];
+    // A booking overlaps if checkIn <= weekEnd AND checkOut > weekStart
     return bookings
-      .filter(b => b.status !== 'cancelled' && b.status !== 'blocked' && b.checkOut >= todayStr)
-      .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
-      .slice(0, 10);
-  }, [bookings, todayStr]);
+      .filter(b => b.status !== 'cancelled' && b.status !== 'blocked' &&
+        b.checkIn <= weekEndStr && b.checkOut > weekStartStr)
+      .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+  }, [bookings, weekDates]);
 
   const handleSync = useCallback(async () => {
     setSyncing(true);
@@ -138,19 +146,19 @@ export default function HomePage() {
         </CardContent>
       </Card>
 
-      {/* Upcoming Occupancies */}
+      {/* Occupancies for displayed week */}
       <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: '#666' }}>
-        Upcoming Occupancies
+        Occupancies ({weekLabel})
       </Typography>
 
-      {upcomingBookings.length === 0 ? (
+      {weekBookings.length === 0 ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 3 }}>
-            <Typography variant="body2" sx={{ color: '#999' }}>No upcoming bookings</Typography>
+            <Typography variant="body2" sx={{ color: '#999' }}>No reservations this week</Typography>
           </CardContent>
         </Card>
       ) : (
-        upcomingBookings.map(booking => (
+        weekBookings.map(booking => (
           <Card key={booking.id} sx={{ mb: 1 }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
