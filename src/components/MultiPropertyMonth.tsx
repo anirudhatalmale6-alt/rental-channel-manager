@@ -64,8 +64,11 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
     return properties.map(prop => {
       const propBookings = bookings.filter(b => b.propertyId === prop.id && b.status !== 'cancelled');
       return visibleDays.map(d => {
-        const dayBooking = propBookings.find(b => isDateInRange(d.dateStr, b.checkIn, b.checkOut));
-        return dayBooking || null;
+        const matching = propBookings.filter(b => isDateInRange(d.dateStr, b.checkIn, b.checkOut));
+        if (matching.length === 0) return null;
+        // Prioritize confirmed bookings over blocked
+        const confirmed = matching.find(b => b.status !== 'blocked');
+        return confirmed || matching[0];
       });
     });
   }, [properties, bookings, visibleDays]);

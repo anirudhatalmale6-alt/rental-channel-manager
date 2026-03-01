@@ -17,7 +17,10 @@ export default function WeekStrip({ property, bookings, weekDates }: Props) {
       const dayBookings = bookings.filter(
         b => b.propertyId === property.id && b.status !== 'cancelled' && isDateInRange(date, b.checkIn, b.checkOut)
       );
-      return dayBookings.length > 0 ? dayBookings[0] : null;
+      if (dayBookings.length === 0) return null;
+      // Prioritize confirmed bookings over blocked
+      const confirmed = dayBookings.find(b => b.status !== 'blocked');
+      return confirmed || dayBookings[0];
     });
   }, [property.id, bookings, weekDates]);
 

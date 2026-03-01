@@ -7,12 +7,12 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Booking } from '@/types';
 import { getDaysInMonth, getFirstDayOfWeek, getWeekNumber, toDateString, isDateInRange, getMonthName } from '@/lib/date-utils';
-import { CHANNEL_COLORS } from '@/types';
 
 interface Props {
   year: number;
   month: number;
   bookings: Booking[];
+  propertyColor?: string;
   selectedDate?: string;
   onSelectDate?: (date: string) => void;
   onMonthChange: (year: number, month: number) => void;
@@ -20,7 +20,7 @@ interface Props {
 
 const WEEKDAYS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
 
-export default function MonthCalendar({ year, month, bookings, selectedDate, onSelectDate, onMonthChange }: Props) {
+export default function MonthCalendar({ year, month, bookings, propertyColor, selectedDate, onSelectDate, onMonthChange }: Props) {
   const daysInMonth = getDaysInMonth(year, month);
   const firstDay = getFirstDayOfWeek(year, month);
 
@@ -28,9 +28,16 @@ export default function MonthCalendar({ year, month, bookings, selectedDate, onS
     const map: Record<string, Booking[]> = {};
     for (let day = 1; day <= daysInMonth; day++) {
       const dateStr = toDateString(year, month, day);
-      map[dateStr] = bookings.filter(b =>
+      const dayBookings = bookings.filter(b =>
         b.status !== 'cancelled' && isDateInRange(dateStr, b.checkIn, b.checkOut)
       );
+      // Sort: confirmed bookings first, then blocked — so real bookings take priority
+      dayBookings.sort((a, b) => {
+        if (a.status === 'blocked' && b.status !== 'blocked') return 1;
+        if (a.status !== 'blocked' && b.status === 'blocked') return -1;
+        return 0;
+      });
+      map[dateStr] = dayBookings;
     }
     return map;
   }, [bookings, year, month, daysInMonth]);
@@ -63,6 +70,9 @@ export default function MonthCalendar({ year, month, bookings, selectedDate, onS
     weeks.push(currentWeek);
   }
 
+  // Use property color or fallback to blue
+  const activeColor = propertyColor || '#1976D2';
+
   return (
     <Box sx={{ bgcolor: 'white', borderRadius: 2, p: 2 }}>
       {/* Header */}
@@ -74,7 +84,7 @@ export default function MonthCalendar({ year, month, bookings, selectedDate, onS
 
       {/* Weekday headers */}
       <Box sx={{ display: 'grid', gridTemplateColumns: '32px repeat(7, 1fr)', gap: 0.5, mb: 0.5 }}>
-        <Typography variant="caption" sx={{ color: '#1976D2', fontWeight: 600, textAlign: 'center' }}>CW</Typography>
+        <Typography variant="caption" sx={{ color: activeColor, fontWeight: 600, textAlign: 'center' }}>CW</Typography>
         {WEEKDAYS.map(d => (
           <Typography key={d} variant="caption" sx={{ textAlign: 'center', color: '#666', fontWeight: 500 }}>{d}</Typography>
         ))}
@@ -88,7 +98,7 @@ export default function MonthCalendar({ year, month, bookings, selectedDate, onS
 
         return (
           <Box key={wi} sx={{ display: 'grid', gridTemplateColumns: '32px repeat(7, 1fr)', gap: 0.5, mb: 0.5 }}>
-            <Typography variant="caption" sx={{ color: '#1976D2', textAlign: 'center', lineHeight: '36px', fontSize: 11 }}>
+            <Typography variant="caption" sx={{ color: activeColor, textAlign: 'center', lineHeight: '36px', fontSize: 11 }}>
               {cw}
             </Typography>
             {week.map((day, di) => {
@@ -98,8 +108,8 @@ export default function MonthCalendar({ year, month, bookings, selectedDate, onS
               const isToday = dateStr === todayStr;
               const isSelected = dateStr === selectedDate;
               const hasBooking = dayBookings.length > 0;
-              const bookingColor = hasBooking ? CHANNEL_COLORS[dayBookings[0].channel] || '#1976D2' : undefined;
-              const isBlocked = dayBookings.some(b => b.status === 'blocked');
+              const isBlocked = hasBooking && dayBookings[0].status === 'blocked';
+              const cellColor = hasBooking ? (isBlocked ? '#E0E0E0' : activeColor) : undefined;
 
               return (
                 <Box
@@ -115,12 +125,12 @@ export default function MonthCalendar({ year, month, bookings, selectedDate, onS
                     cursor: 'pointer',
                     position: 'relative',
                     bgcolor: hasBooking
-                      ? (isBlocked ? '#E0E0E0' : bookingColor)
+                      ? cellColor
                       : (isSelected ? '#E3F2FD' : 'transparent'),
-                    color: hasBooking && !isBlocked ? '#fff' : (isToday ? '#1976D2' : 'inherit'),
+                    color: hasBooking && !isBlocked ? '#fff' : (isToday ? activeColor : 'inherit'),
                     fontWeight: isToday || hasBooking ? 700 : 400,
-                    border: isToday ? '2px solid #1976D2' : (isSelected ? '2px solid #1976D2' : 'none'),
-                    '&:hover': { bgcolor: hasBooking ? bookingColor : '#F0F0F0' },
+                    border: isToday ? `2px solid ${activeColor}` : (isSelected ? `2px solid ${activeColor}` : 'none'),
+                    '&:hover': { bgcolor: hasBooking ? cellColor : '#F0F0F0' },
                     fontSize: 14,
                     minHeight: 36,
                   }}

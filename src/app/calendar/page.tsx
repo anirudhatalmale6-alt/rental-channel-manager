@@ -160,6 +160,7 @@ export default function CalendarPage() {
             year={year}
             month={month}
             bookings={allDisplayBookings}
+            propertyColor={properties.find(p => p.id === selectedProperty)?.color}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
             onMonthChange={(y, m) => { setYear(y); setMonth(m); }}
