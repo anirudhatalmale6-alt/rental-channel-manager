@@ -1,65 +1,172 @@
-import Image from "next/image";
+'use client';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
+import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import SyncIcon from '@mui/icons-material/Sync';
+import AddIcon from '@mui/icons-material/Add';
+import { useRouter } from 'next/navigation';
+import { getProperties, getBookings } from '@/lib/store';
+import { Property, Booking } from '@/types';
+import { isDateInRange, toDateString, formatDate } from '@/lib/date-utils';
+import WeekStrip from '@/components/WeekStrip';
+import ChannelIcon from '@/components/ChannelIcon';
+import { syncAllProperties } from '@/lib/sync';
 
-export default function Home() {
+export default function HomePage() {
+  const router = useRouter();
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+
+  useEffect(() => {
+    setProperties(getProperties());
+    setBookings(getBookings());
+  }, []);
+
+  const today = new Date();
+  const weekStart = useMemo(() => {
+    const d = new Date(today);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1) + weekOffset * 7;
+    d.setDate(diff);
+    return d;
+  }, [weekOffset]);
+
+  const weekDates = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(weekStart);
+      d.setDate(weekStart.getDate() + i);
+      return toDateString(d.getFullYear(), d.getMonth(), d.getDate());
+    });
+  }, [weekStart]);
+
+  const weekLabel = useMemo(() => {
+    const end = new Date(weekStart);
+    end.setDate(weekStart.getDate() + 6);
+    const opts: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' };
+    return `${weekStart.toLocaleDateString('en-GB', opts)} - ${end.toLocaleDateString('en-GB', opts)} ${end.getFullYear()}`;
+  }, [weekStart]);
+
+  const dayHeaders = useMemo(() => {
+    return weekDates.map(d => {
+      const date = new Date(d + 'T00:00:00');
+      return { day: date.getDate(), weekday: date.toLocaleDateString('en-US', { weekday: 'short' }).substring(0, 2) };
+    });
+  }, [weekDates]);
+
+  // Upcoming bookings (sorted by check-in)
+  const todayStr = toDateString(today.getFullYear(), today.getMonth(), today.getDate());
+  const upcomingBookings = useMemo(() => {
+    return bookings
+      .filter(b => b.status !== 'cancelled' && b.status !== 'blocked' && b.checkOut >= todayStr)
+      .sort((a, b) => a.checkIn.localeCompare(b.checkIn))
+      .slice(0, 10);
+  }, [bookings, todayStr]);
+
+  const handleSync = useCallback(async () => {
+    setSyncing(true);
+    try {
+      await syncAllProperties();
+      setBookings(getBookings());
+    } finally {
+      setSyncing(false);
+    }
+  }, []);
+
+  if (properties.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center', mt: 8 }}>
+        <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>Rental Channel Manager</Typography>
+        <Typography sx={{ mb: 3, color: '#666' }}>
+          Get started by adding your properties and connecting your iCal feeds.
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => router.push('/settings')}
+          size="large"
+        >
+          Add Your First Property
+        </Button>
+      </Box>
+    );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <Box sx={{ p: 2 }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 1 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>Overview</Typography>
+        <IconButton onClick={handleSync} disabled={syncing} color="primary">
+          <SyncIcon sx={{ animation: syncing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '100%': { transform: 'rotate(360deg)' } } }} />
+        </IconButton>
+      </Box>
+
+      {/* Week Navigator */}
+      <Card sx={{ mb: 2 }}>
+        <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+            <IconButton size="small" onClick={() => setWeekOffset(w => w - 1)}><ChevronLeftIcon /></IconButton>
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>{weekLabel}</Typography>
+            <IconButton size="small" onClick={() => setWeekOffset(w => w + 1)}><ChevronRightIcon /></IconButton>
+          </Box>
+
+          {/* Day headers */}
+          <Box sx={{ display: 'flex', mb: 1 }}>
+            <Box sx={{ width: 140 }} />
+            <Box sx={{ display: 'flex', flex: 1, gap: 0.25 }}>
+              {dayHeaders.map((h, i) => (
+                <Box key={i} sx={{ flex: 1, textAlign: 'center' }}>
+                  <Typography variant="caption" sx={{ color: '#999', fontSize: 10 }}>{h.weekday}</Typography>
+                  <Typography variant="caption" sx={{ display: 'block', fontWeight: 600, fontSize: 11 }}>{h.day}</Typography>
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          {/* Property strips */}
+          {properties.map(p => (
+            <WeekStrip key={p.id} property={p} bookings={bookings} weekDates={weekDates} />
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* Upcoming Occupancies */}
+      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: '#666' }}>
+        Upcoming Occupancies
+      </Typography>
+
+      {upcomingBookings.length === 0 ? (
+        <Card>
+          <CardContent sx={{ textAlign: 'center', py: 3 }}>
+            <Typography variant="body2" sx={{ color: '#999' }}>No upcoming bookings</Typography>
+          </CardContent>
+        </Card>
+      ) : (
+        upcomingBookings.map(booking => (
+          <Card key={booking.id} sx={{ mb: 1 }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                <ChannelIcon channel={booking.channel} size="small" />
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>{booking.propertyName}</Typography>
+              </Box>
+              <Typography variant="body2">
+                {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#666' }}>
+                {booking.guestName}
+              </Typography>
+            </CardContent>
+          </Card>
+        ))
+      )}
+    </Box>
   );
 }
