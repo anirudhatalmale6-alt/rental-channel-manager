@@ -70,10 +70,10 @@ export const CHANNEL_LABELS: Record<Channel, string> = {
 };
 
 export const PROPERTY_COLORS = [
-  '#1976D2',
-  '#E91E63',
-  '#FF9800',
-  '#4CAF50',
-  '#9C27B0',
-  '#00BCD4',
+  '#64B5F6', // light blue (PM1)
+  '#F48FB1', // pink (PM2)
+  '#FFD54F', // yellow (LONGERE)
+  '#81C784', // green
+  '#CE93D8', // purple
+  '#4DD0E1', // cyan
 ];

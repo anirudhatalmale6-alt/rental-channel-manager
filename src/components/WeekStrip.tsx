@@ -3,8 +3,7 @@ import { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { Property, Booking } from '@/types';
-import { isDateInRange, toDateString } from '@/lib/date-utils';
-import { CHANNEL_COLORS } from '@/types';
+import { isDateInRange } from '@/lib/date-utils';
 
 interface Props {
   property: Property;
@@ -38,27 +37,33 @@ export default function WeekStrip({ property, bookings, weekDates }: Props) {
         {property.name}
       </Typography>
       <Box sx={{ display: 'flex', flex: 1, gap: 0.25 }}>
-        {dayStates.map((booking, i) => (
-          <Box
-            key={i}
-            sx={{
-              flex: 1,
-              height: 28,
-              borderRadius: 0.5,
-              bgcolor: booking
-                ? (booking.status === 'blocked' ? '#E0E0E0' : CHANNEL_COLORS[booking.channel])
-                : '#F5F5F5',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: booking && booking.status !== 'blocked' ? '#fff' : '#999',
-              fontSize: 11,
-              fontWeight: 600,
-            }}
-          >
-            {new Date(weekDates[i] + 'T00:00:00').getDate()}
-          </Box>
-        ))}
+        {dayStates.map((booking, i) => {
+          const isOccupied = booking && booking.status !== 'blocked';
+          const isBlocked = booking && booking.status === 'blocked';
+          return (
+            <Box
+              key={i}
+              sx={{
+                flex: 1,
+                height: 28,
+                borderRadius: 0.5,
+                bgcolor: isOccupied
+                  ? property.color
+                  : isBlocked
+                    ? '#E0E0E0'
+                    : '#F5F5F5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: isOccupied ? '#fff' : '#999',
+                fontSize: 11,
+                fontWeight: 600,
+              }}
+            >
+              {new Date(weekDates[i] + 'T00:00:00').getDate()}
+            </Box>
+          );
+        })}
       </Box>
     </Box>
   );

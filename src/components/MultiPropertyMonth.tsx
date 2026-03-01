@@ -8,7 +8,7 @@ import CardContent from '@mui/material/CardContent';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
-import { Property, Booking, CHANNEL_COLORS } from '@/types';
+import { Property, Booking } from '@/types';
 import { isDateInRange, formatDate } from '@/lib/date-utils';
 import ChannelIcon from './ChannelIcon';
 
@@ -194,7 +194,7 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
               <Box sx={{ display: 'flex' }}>
                 {propertyDayStates[pi].map((booking, di) => {
                   const bgColor = booking
-                    ? (booking.status === 'blocked' ? '#E0E0E0' : (CHANNEL_COLORS[booking.channel] || '#1976D2'))
+                    ? (booking.status === 'blocked' ? '#E0E0E0' : prop.color)
                     : '#F5F5F5';
                   const isBooked = booking && booking.status !== 'blocked';
                   return (
