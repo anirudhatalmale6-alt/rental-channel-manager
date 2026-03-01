@@ -92,7 +92,7 @@ export default function HomePage() {
     const weekEndStr = weekDates[6];
     // A booking overlaps if checkIn <= weekEnd AND checkOut > weekStart
     return bookings
-      .filter(b => b.status !== 'cancelled' && b.status !== 'blocked' &&
+      .filter(b => b.status !== 'cancelled' &&
         b.checkIn <= weekEndStr && b.checkOut > weekStartStr)
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
   }, [bookings, weekDates]);
@@ -177,22 +177,33 @@ export default function HomePage() {
           </CardContent>
         </Card>
       ) : (
-        weekBookings.map(booking => (
-          <Card key={booking.id} sx={{ mb: 1 }}>
+        weekBookings.map(booking => {
+          const isBlocked = booking.status === 'blocked';
+          const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
+          return (
+          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}` }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                <ChannelIcon channel={booking.channel} size="small" />
+                {isBlocked ? (
+                  <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: '#E0E0E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#999' }}>✕</Box>
+                ) : (
+                  <ChannelIcon channel={booking.channel} size="small" />
+                )}
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>{booking.propertyName}</Typography>
+                {isBlocked && (
+                  <Typography variant="caption" sx={{ bgcolor: '#F5F5F5', px: 0.8, py: 0.2, borderRadius: 1, color: '#999', fontSize: 10 }}>Blocked</Typography>
+                )}
               </Box>
               <Typography variant="body2">
                 {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
               </Typography>
               <Typography variant="caption" sx={{ color: '#666' }}>
-                {booking.guestName}
+                {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
               </Typography>
             </CardContent>
           </Card>
-        ))
+          );
+        })
       )}
     </Box>
   );
