@@ -66,7 +66,8 @@ export function parseICalData(
           const lowerSummary = summary.toLowerCase();
           if (lowerSummary.includes('not available') || lowerSummary.includes('blocked') || lowerSummary.includes('unavailable')) {
             status = 'blocked';
-            guestName = '';
+            // Keep the summary as a note — might contain useful info beyond just "Not available"
+            guestName = (lowerSummary === 'not available' || lowerSummary === 'blocked' || lowerSummary === 'unavailable') ? '' : summary;
           } else if (lowerSummary === 'reserved' || lowerSummary === 'booked') {
             guestName = 'Reserved';
           } else {

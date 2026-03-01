@@ -76,7 +76,7 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
   const monthOccupancies = useMemo(() => {
     return bookings
       .filter(b => {
-        if (b.status === 'cancelled' || b.status === 'blocked') return false;
+        if (b.status === 'cancelled') return false;
         return b.checkIn < nextMonth && b.checkOut > monthStart;
       })
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
@@ -244,25 +244,36 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
           </CardContent>
         </Card>
       ) : (
-        monthOccupancies.map(booking => (
-          <Card key={booking.id} sx={{ mb: 1 }}>
+        monthOccupancies.map(booking => {
+          const isBlocked = booking.status === 'blocked';
+          const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
+          return (
+          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}` }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-                  <ChannelIcon channel={booking.channel} size="small" />
+                  {isBlocked ? (
+                    <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: '#E0E0E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#999' }}>✕</Box>
+                  ) : (
+                    <ChannelIcon channel={booking.channel} size="small" />
+                  )}
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>{booking.propertyName}</Typography>
+                  {isBlocked && (
+                    <Typography variant="caption" sx={{ bgcolor: '#F5F5F5', px: 0.8, py: 0.2, borderRadius: 1, color: '#999', fontSize: 10 }}>Blocked</Typography>
+                  )}
                 </Box>
                 <Typography variant="body2" sx={{ color: '#444' }}>
                   {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#888' }}>
-                  {booking.guestName}
+                  {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
                 </Typography>
               </Box>
               <ChevronRightOutlinedIcon sx={{ color: '#ccc' }} />
             </CardContent>
           </Card>
-        ))
+          );
+        })
       )}
     </Box>
   );
