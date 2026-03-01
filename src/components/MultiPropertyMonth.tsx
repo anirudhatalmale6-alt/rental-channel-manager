@@ -1,5 +1,5 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -9,7 +9,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
 import { Property, Booking, CHANNEL_COLORS } from '@/types';
-import { getDaysInMonth, toDateString, isDateInRange, getMonthName, formatDate } from '@/lib/date-utils';
+import { isDateInRange, formatDate } from '@/lib/date-utils';
 import ChannelIcon from './ChannelIcon';
 
 interface Props {
@@ -20,131 +20,221 @@ interface Props {
   onMonthChange: (year: number, month: number) => void;
 }
 
-const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const WEEKDAYS_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const VISIBLE_DAYS = 10; // Number of day columns visible at once
+const SCROLL_STEP = 7;   // Scroll by 7 days (one week)
+const CELL_W = 32;        // Width of each day cell
+
+function toDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 export default function MultiPropertyMonth({ year, month, properties, bookings, onMonthChange }: Props) {
-  const daysInMonth = getDaysInMonth(year, month);
-  const monthStart = toDateString(year, month, 1);
-  const monthEnd = toDateString(year, month, daysInMonth);
+  const [startIdx, setStartIdx] = useState(0);
 
-  // Build day numbers array for header
+  // Build all days in the month
   const days = useMemo(() => {
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
     return Array.from({ length: daysInMonth }, (_, i) => {
       const d = new Date(year, month, i + 1);
       return {
         day: i + 1,
-        weekday: WEEKDAYS[d.getDay()],
-        dateStr: toDateString(year, month, i + 1),
+        weekday: WEEKDAYS_SHORT[d.getDay()],
+        dateStr: toDateStr(d),
+        isWeekend: d.getDay() === 0 || d.getDay() === 6,
+        isToday: toDateStr(d) === toDateStr(new Date()),
       };
     });
-  }, [year, month, daysInMonth]);
+  }, [year, month]);
 
-  // For each property, get the booking state per day
+  // Reset startIdx when month changes
+  useMemo(() => { setStartIdx(0); }, [year, month]);
+
+  // Visible window of days
+  const visibleDays = days.slice(startIdx, startIdx + VISIBLE_DAYS);
+  const canScrollLeft = startIdx > 0;
+  const canScrollRight = startIdx + VISIBLE_DAYS < days.length;
+
+  // For each property, get the booking state per visible day
   const propertyDayStates = useMemo(() => {
     return properties.map(prop => {
       const propBookings = bookings.filter(b => b.propertyId === prop.id && b.status !== 'cancelled');
-      return days.map(d => {
+      return visibleDays.map(d => {
         const dayBooking = propBookings.find(b => isDateInRange(d.dateStr, b.checkIn, b.checkOut));
         return dayBooking || null;
       });
     });
-  }, [properties, bookings, days]);
+  }, [properties, bookings, visibleDays]);
 
-  // Occupancies for this month only: bookings that overlap with this month
+  // Occupancies for this month only
+  const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+  const nextMonth = month === 11 ? `${year + 1}-01-01` : `${year}-${String(month + 2).padStart(2, '0')}-01`;
   const monthOccupancies = useMemo(() => {
     return bookings
       .filter(b => {
         if (b.status === 'cancelled' || b.status === 'blocked') return false;
-        // Booking overlaps with month if checkIn < monthEnd+1 AND checkOut > monthStart
-        const nextMonth = month === 11 ? toDateString(year + 1, 0, 1) : toDateString(year, month + 1, 1);
         return b.checkIn < nextMonth && b.checkOut > monthStart;
       })
       .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
-  }, [bookings, year, month, monthStart]);
+  }, [bookings, monthStart, nextMonth]);
 
-  const handlePrev = () => {
+  const handleScrollLeft = () => {
+    setStartIdx(Math.max(0, startIdx - SCROLL_STEP));
+  };
+
+  const handleScrollRight = () => {
+    setStartIdx(Math.min(days.length - VISIBLE_DAYS, startIdx + SCROLL_STEP));
+  };
+
+  const handlePrevMonth = () => {
     if (month === 0) onMonthChange(year - 1, 11);
     else onMonthChange(year, month - 1);
   };
 
-  const handleNext = () => {
+  const handleNextMonth = () => {
     if (month === 11) onMonthChange(year + 1, 0);
     else onMonthChange(year, month + 1);
   };
 
+  const stripWidth = visibleDays.length * CELL_W;
+
   return (
     <Box>
-      {/* Month header */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <IconButton onClick={handlePrev} size="small"><ChevronLeftIcon /></IconButton>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>{getMonthName(month)} {year}</Typography>
-        <IconButton onClick={handleNext} size="small"><ChevronRightIcon /></IconButton>
+      {/* Month selector */}
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', mb: 1.5, gap: 1 }}>
+        <IconButton onClick={handlePrevMonth} size="small"><ChevronLeftIcon /></IconButton>
+        <Typography variant="h6" sx={{ fontWeight: 600, minWidth: 140, textAlign: 'center' }}>
+          {MONTH_NAMES[month]} {year}
+        </Typography>
+        <IconButton onClick={handleNextMonth} size="small"><ChevronRightIcon /></IconButton>
       </Box>
 
       {/* Calendar strip card */}
       <Card sx={{ mb: 2, overflow: 'hidden' }}>
-        <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, overflowX: 'auto' }}>
-          {/* Day headers */}
-          <Box sx={{ display: 'flex', mb: 0.5, minWidth: days.length * 26 + 120 }}>
-            <Box sx={{ width: 120, flexShrink: 0 }} />
-            {days.map(d => (
-              <Box key={d.day} sx={{ width: 26, flexShrink: 0, textAlign: 'center' }}>
-                <Typography sx={{ fontSize: 9, color: '#999', lineHeight: 1.2 }}>{d.weekday}</Typography>
-                <Typography sx={{ fontSize: 10, fontWeight: 600, lineHeight: 1.2 }}>{d.day}</Typography>
+        <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+          {/* Day scroll arrows + header */}
+          <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
+            {/* Left panel: empty space above property names + left arrow */}
+            <Box sx={{ width: 110, flexShrink: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+              {/* Arrow row aligned with day headers */}
+              <Box sx={{ height: 36, display: 'flex', alignItems: 'center', justifyContent: 'flex-end', pr: 0.5 }}>
+                <IconButton
+                  onClick={handleScrollLeft}
+                  disabled={!canScrollLeft}
+                  size="small"
+                  sx={{ p: 0.3 }}
+                >
+                  <ChevronLeftIcon fontSize="small" />
+                </IconButton>
               </Box>
-            ))}
+            </Box>
+
+            {/* Right panel: day columns */}
+            <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              {/* Day headers with right arrow */}
+              <Box sx={{ display: 'flex', alignItems: 'center', height: 36 }}>
+                <Box sx={{ display: 'flex' }}>
+                  {visibleDays.map(d => (
+                    <Box
+                      key={d.day}
+                      sx={{
+                        width: CELL_W,
+                        flexShrink: 0,
+                        textAlign: 'center',
+                        bgcolor: d.isToday ? '#E3F2FD' : 'transparent',
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography sx={{ fontSize: 9, color: d.isWeekend ? '#E91E63' : '#999', lineHeight: 1.2 }}>
+                        {d.weekday}
+                      </Typography>
+                      <Typography sx={{ fontSize: 11, fontWeight: d.isToday ? 700 : 600, lineHeight: 1.2, color: d.isToday ? '#1976D2' : 'inherit' }}>
+                        {d.day}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+                <IconButton
+                  onClick={handleScrollRight}
+                  disabled={!canScrollRight}
+                  size="small"
+                  sx={{ p: 0.3, ml: 0.5 }}
+                >
+                  <ChevronRightIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Box>
           </Box>
 
           {/* Property rows */}
           {properties.map((prop, pi) => (
-            <Box key={prop.id} sx={{ display: 'flex', alignItems: 'center', mb: 0.5, minWidth: days.length * 26 + 120 }}>
+            <Box key={prop.id} sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
+              {/* Property name - fixed left */}
               <Typography
                 variant="body2"
                 sx={{
-                  width: 120,
+                  width: 110,
                   flexShrink: 0,
                   fontWeight: 500,
-                  fontSize: 12,
+                  fontSize: 11,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  pr: 1,
+                  pr: 0.5,
+                  color: '#333',
                 }}
               >
                 {prop.name}
               </Typography>
+              {/* Day cells */}
               <Box sx={{ display: 'flex' }}>
-                {propertyDayStates[pi].map((booking, di) => (
-                  <Box
-                    key={di}
-                    sx={{
-                      width: 26,
-                      height: 24,
-                      flexShrink: 0,
-                      bgcolor: booking
-                        ? (booking.status === 'blocked' ? '#E0E0E0' : (CHANNEL_COLORS[booking.channel] || '#1976D2'))
-                        : '#F5F5F5',
-                      borderRight: '1px solid #fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: booking && booking.status !== 'blocked' ? '#fff' : '#ccc',
-                      fontSize: 9,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {days[di].day}
-                  </Box>
-                ))}
+                {propertyDayStates[pi].map((booking, di) => {
+                  const bgColor = booking
+                    ? (booking.status === 'blocked' ? '#E0E0E0' : (CHANNEL_COLORS[booking.channel] || '#1976D2'))
+                    : '#F5F5F5';
+                  const isBooked = booking && booking.status !== 'blocked';
+                  return (
+                    <Box
+                      key={di}
+                      sx={{
+                        width: CELL_W,
+                        height: 26,
+                        flexShrink: 0,
+                        bgcolor: bgColor,
+                        borderRight: '1px solid #fff',
+                        borderRadius: 0.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: isBooked ? '#fff' : '#bbb',
+                        fontSize: 10,
+                        fontWeight: 600,
+                      }}
+                    >
+                      {visibleDays[di]?.day}
+                    </Box>
+                  );
+                })}
               </Box>
             </Box>
           ))}
+
+          {/* Day range indicator */}
+          <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center' }}>
+            <Typography variant="caption" sx={{ color: '#999', fontSize: 10 }}>
+              Days {startIdx + 1}–{Math.min(startIdx + VISIBLE_DAYS, days.length)} of {days.length}
+            </Typography>
+          </Box>
         </CardContent>
       </Card>
 
       {/* Occupancies for this month */}
       <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: '#666' }}>
-        Occupancies ({getMonthName(month)} {year})
+        Occupancies ({MONTH_NAMES[month]} {year})
       </Typography>
 
       {monthOccupancies.length === 0 ? (
@@ -163,7 +253,7 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>{booking.propertyName}</Typography>
                 </Box>
                 <Typography variant="body2" sx={{ color: '#444' }}>
-                  {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
+                  {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
                 </Typography>
                 <Typography variant="caption" sx={{ color: '#888' }}>
                   {booking.guestName}
