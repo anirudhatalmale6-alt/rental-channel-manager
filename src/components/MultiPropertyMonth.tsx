@@ -9,7 +9,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
 import { Property, Booking } from '@/types';
-import { isDateInRange, formatDate, lightenColor } from '@/lib/date-utils';
+import { isDateInRange, formatDate, lightenColor, deduplicateBookings } from '@/lib/date-utils';
 import ChannelIcon from './ChannelIcon';
 
 interface Props {
@@ -77,12 +77,11 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
   const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
   const nextMonth = month === 11 ? `${year + 1}-01-01` : `${year}-${String(month + 2).padStart(2, '0')}-01`;
   const monthOccupancies = useMemo(() => {
-    return bookings
-      .filter(b => {
-        if (b.status === 'cancelled') return false;
-        return b.checkIn < nextMonth && b.checkOut > monthStart;
-      })
-      .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+    const filtered = bookings.filter(b => {
+      if (b.status === 'cancelled') return false;
+      return b.checkIn < nextMonth && b.checkOut > monthStart;
+    });
+    return deduplicateBookings(filtered).sort((a, b) => a.checkIn.localeCompare(b.checkIn));
   }, [bookings, monthStart, nextMonth]);
 
   const handleScrollLeft = () => {

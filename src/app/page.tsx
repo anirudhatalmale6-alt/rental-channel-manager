@@ -13,7 +13,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useRouter } from 'next/navigation';
 import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
 import { Property, Booking, BlockedDate } from '@/types';
-import { isDateInRange, toDateString, formatDate } from '@/lib/date-utils';
+import { isDateInRange, toDateString, formatDate, deduplicateBookings } from '@/lib/date-utils';
 import WeekStrip from '@/components/WeekStrip';
 import ChannelIcon from '@/components/ChannelIcon';
 import { syncAllProperties } from '@/lib/sync';
@@ -91,10 +91,9 @@ export default function HomePage() {
     const weekStartStr = weekDates[0];
     const weekEndStr = weekDates[6];
     // A booking overlaps if checkIn <= weekEnd AND checkOut > weekStart
-    return bookings
-      .filter(b => b.status !== 'cancelled' &&
-        b.checkIn <= weekEndStr && b.checkOut > weekStartStr)
-      .sort((a, b) => a.checkIn.localeCompare(b.checkIn));
+    const filtered = bookings.filter(b => b.status !== 'cancelled' &&
+      b.checkIn <= weekEndStr && b.checkOut > weekStartStr);
+    return deduplicateBookings(filtered).sort((a, b) => a.checkIn.localeCompare(b.checkIn));
   }, [bookings, weekDates]);
 
   const handleSync = useCallback(async () => {

@@ -53,6 +53,22 @@ export function lightenColor(hex: string, amount: number = 0.5): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
+// Deduplicate bookings: for same property + overlapping dates, keep confirmed over blocked
+export function deduplicateBookings<T extends { propertyId: string; checkIn: string; checkOut: string; status: string }>(bookings: T[]): T[] {
+  const seen = new Map<string, T>();
+  for (const b of bookings) {
+    const key = `${b.propertyId}|${b.checkIn}|${b.checkOut}`;
+    const existing = seen.get(key);
+    if (!existing) {
+      seen.set(key, b);
+    } else if (existing.status === 'blocked' && b.status !== 'blocked') {
+      // Prefer confirmed booking over blocked
+      seen.set(key, b);
+    }
+  }
+  return Array.from(seen.values());
+}
+
 export function getWeekDates(year: number, month: number, weekStart: Date): string[] {
   const dates: string[] = [];
   for (let i = 0; i < 7; i++) {
