@@ -6,7 +6,7 @@ import IconButton from '@mui/material/IconButton';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { Booking } from '@/types';
-import { getDaysInMonth, getFirstDayOfWeek, getWeekNumber, toDateString, isDateInRange, getMonthName } from '@/lib/date-utils';
+import { getDaysInMonth, getFirstDayOfWeek, getWeekNumber, toDateString, isDateInRange, getMonthName, lightenColor } from '@/lib/date-utils';
 
 interface Props {
   year: number;
@@ -109,7 +109,7 @@ export default function MonthCalendar({ year, month, bookings, propertyColor, se
               const isSelected = dateStr === selectedDate;
               const hasBooking = dayBookings.length > 0;
               const isBlocked = hasBooking && dayBookings[0].status === 'blocked';
-              const cellColor = hasBooking ? (isBlocked ? '#E0E0E0' : activeColor) : undefined;
+              const cellColor = hasBooking ? (isBlocked ? lightenColor(activeColor, 0.55) : activeColor) : undefined;
 
               return (
                 <Box

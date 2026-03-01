@@ -9,7 +9,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
 import { Property, Booking } from '@/types';
-import { isDateInRange, formatDate } from '@/lib/date-utils';
+import { isDateInRange, formatDate, lightenColor } from '@/lib/date-utils';
 import ChannelIcon from './ChannelIcon';
 
 interface Props {
@@ -197,7 +197,7 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
               <Box sx={{ display: 'flex' }}>
                 {propertyDayStates[pi].map((booking, di) => {
                   const bgColor = booking
-                    ? (booking.status === 'blocked' ? '#E0E0E0' : prop.color)
+                    ? (booking.status === 'blocked' ? lightenColor(prop.color, 0.55) : prop.color)
                     : '#F5F5F5';
                   const isBooked = booking && booking.status !== 'blocked';
                   return (

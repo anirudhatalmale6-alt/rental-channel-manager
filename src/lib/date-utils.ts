@@ -44,6 +44,15 @@ export function getMonthName(month: number): string {
   return new Date(2026, month, 1).toLocaleDateString('en-US', { month: 'long' });
 }
 
+// Lighten a hex color by mixing with white (amount 0-1, higher = lighter)
+export function lightenColor(hex: string, amount: number = 0.5): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.round(((num >> 16) & 255) + (255 - ((num >> 16) & 255)) * amount);
+  const g = Math.round(((num >> 8) & 255) + (255 - ((num >> 8) & 255)) * amount);
+  const b = Math.round((num & 255) + (255 - (num & 255)) * amount);
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
+}
+
 export function getWeekDates(year: number, month: number, weekStart: Date): string[] {
   const dates: string[] = [];
   for (let i = 0; i < 7; i++) {

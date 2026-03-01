@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { Property, Booking } from '@/types';
-import { isDateInRange } from '@/lib/date-utils';
+import { isDateInRange, lightenColor } from '@/lib/date-utils';
 
 interface Props {
   property: Property;
@@ -53,7 +53,7 @@ export default function WeekStrip({ property, bookings, weekDates }: Props) {
                 bgcolor: isOccupied
                   ? property.color
                   : isBlocked
-                    ? '#E0E0E0'
+                    ? lightenColor(property.color, 0.55)
                     : '#F5F5F5',
                 display: 'flex',
                 alignItems: 'center',
