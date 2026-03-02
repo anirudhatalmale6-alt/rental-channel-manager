@@ -1,7 +1,7 @@
 {
-  "name": "Rental Channel Manager",
-  "short_name": "RCM",
-  "description": "Manage your rental properties across Airbnb, Vrbo, and Expedia",
+  "name": "Kerlaret Rental",
+  "short_name": "Kerlaret",
+  "description": "Manage your rental properties across Airbnb, Vrbo and more",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F7FA",
