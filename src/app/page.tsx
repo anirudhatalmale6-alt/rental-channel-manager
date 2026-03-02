@@ -208,10 +208,10 @@ export default function HomePage() {
                 )}
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>{booking.propertyName}</Typography>
                 {isBlocked && (
-                  <Typography variant="caption" sx={{ bgcolor: '#F5F5F5', px: 0.8, py: 0.2, borderRadius: 1, color: '#999', fontSize: 10 }}>Blocked</Typography>
+                  <Typography variant="caption" sx={{ bgcolor: lightenColor(propColor, 0.7), px: 0.8, py: 0.2, borderRadius: 1, color: propColor, fontSize: 10, fontWeight: 700 }}>Blocked</Typography>
                 )}
                 {!isBlocked && booking.channel !== 'manual' && (
-                  <Typography variant="caption" sx={{ color: '#999', fontSize: 10 }}>via {booking.channel.charAt(0).toUpperCase() + booking.channel.slice(1)}</Typography>
+                  <Typography variant="caption" sx={{ color: propColor, fontSize: 11, fontWeight: 700 }}>via {booking.channel.charAt(0).toUpperCase() + booking.channel.slice(1)}</Typography>
                 )}
               </Box>
               <Typography variant="body2">
