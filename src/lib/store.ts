@@ -97,6 +97,15 @@ export function upsertBooking(booking: Booking) {
   setItem(STORAGE_KEYS.bookings, bookings);
 }
 
+export function updateBookingField(id: string, updates: Partial<Booking>) {
+  const bookings = getBookings();
+  const idx = bookings.findIndex(b => b.id === id);
+  if (idx >= 0) {
+    bookings[idx] = { ...bookings[idx], ...updates };
+    setItem(STORAGE_KEYS.bookings, bookings);
+  }
+}
+
 export function removeBooking(id: string) {
   const bookings = getBookings().filter(b => b.id !== id);
   setItem(STORAGE_KEYS.bookings, bookings);

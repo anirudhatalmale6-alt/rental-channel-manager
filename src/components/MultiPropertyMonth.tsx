@@ -11,6 +11,7 @@ import ChevronRightOutlinedIcon from '@mui/icons-material/ChevronRightOutlined';
 import { Property, Booking } from '@/types';
 import { isDateInRange, formatDate, lightenColor, deduplicateBookings } from '@/lib/date-utils';
 import ChannelIcon from './ChannelIcon';
+import BookingEditDialog from './BookingEditDialog';
 
 interface Props {
   year: number;
@@ -18,6 +19,7 @@ interface Props {
   properties: Property[];
   bookings: Booking[];
   onMonthChange: (year: number, month: number) => void;
+  onBookingUpdated?: (updated: Booking) => void;
 }
 
 const WEEKDAYS_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
@@ -33,8 +35,9 @@ function toDateStr(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-export default function MultiPropertyMonth({ year, month, properties, bookings, onMonthChange }: Props) {
+export default function MultiPropertyMonth({ year, month, properties, bookings, onMonthChange, onBookingUpdated }: Props) {
   const [startIdx, setStartIdx] = useState(0);
+  const [editBooking, setEditBooking] = useState<Booking | null>(null);
 
   // Build all days in the month
   const days = useMemo(() => {
@@ -256,7 +259,7 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
           const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
           const channelLabel = !isBlocked && booking.channel !== 'manual' ? booking.channel.charAt(0).toUpperCase() + booking.channel.slice(1) : '';
           return (
-          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}`, bgcolor: lightenColor(propColor, 0.85) }}>
+          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}`, bgcolor: lightenColor(propColor, 0.85), cursor: 'pointer' }} onClick={() => setEditBooking(booking)}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
@@ -293,6 +296,15 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
           );
         })
       )}
+
+      <BookingEditDialog
+        booking={editBooking}
+        onClose={() => setEditBooking(null)}
+        onSaved={(updated) => {
+          setEditBooking(null);
+          onBookingUpdated?.(updated);
+        }}
+      />
     </Box>
   );
 }

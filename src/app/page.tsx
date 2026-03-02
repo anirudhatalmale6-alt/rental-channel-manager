@@ -17,6 +17,7 @@ import { isDateInRange, toDateString, formatDate, deduplicateBookings, lightenCo
 import WeekStrip from '@/components/WeekStrip';
 import ChannelIcon from '@/components/ChannelIcon';
 import { syncAllProperties } from '@/lib/sync';
+import BookingEditDialog from '@/components/BookingEditDialog';
 
 export default function HomePage() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function HomePage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [syncing, setSyncing] = useState(false);
+  const [editBooking, setEditBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     const props = getProperties();
@@ -198,7 +200,7 @@ export default function HomePage() {
           const isBlocked = booking.status === 'blocked';
           const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
           return (
-          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}`, bgcolor: lightenColor(propColor, 0.85) }}>
+          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}`, bgcolor: lightenColor(propColor, 0.85), cursor: 'pointer' }} onClick={() => setEditBooking(booking)}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                 {isBlocked ? (
@@ -232,6 +234,14 @@ export default function HomePage() {
           );
         })
       )}
+
+      <BookingEditDialog
+        booking={editBooking}
+        onClose={() => setEditBooking(null)}
+        onSaved={(updated) => {
+          setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
+        }}
+      />
     </Box>
   );
 }

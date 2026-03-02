@@ -150,6 +150,9 @@ export default function CalendarPage() {
           properties={properties}
           bookings={allBookingsWithBlocks}
           onMonthChange={(y, m) => { setYear(y); setMonth(m); }}
+          onBookingUpdated={(updated) => {
+            setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
+          }}
         />
       )}
 
