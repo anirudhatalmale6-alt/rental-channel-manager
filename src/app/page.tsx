@@ -210,13 +210,23 @@ export default function HomePage() {
                 {isBlocked && (
                   <Typography variant="caption" sx={{ bgcolor: '#F5F5F5', px: 0.8, py: 0.2, borderRadius: 1, color: '#999', fontSize: 10 }}>Blocked</Typography>
                 )}
+                {!isBlocked && booking.channel !== 'manual' && (
+                  <Typography variant="caption" sx={{ color: '#999', fontSize: 10 }}>via {booking.channel.charAt(0).toUpperCase() + booking.channel.slice(1)}</Typography>
+                )}
               </Box>
               <Typography variant="body2">
                 {formatDate(booking.checkIn)} - {formatDate(booking.checkOut)}
               </Typography>
-              <Typography variant="caption" sx={{ color: '#666' }}>
-                {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography variant="caption" sx={{ color: '#666' }}>
+                  {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
+                </Typography>
+                {!isBlocked && booking.income > 0 && (
+                  <Typography variant="caption" sx={{ color: '#4CAF50', fontWeight: 600, fontSize: 11 }}>
+                    {booking.income.toFixed(2)} {booking.currency}
+                  </Typography>
+                )}
+              </Box>
             </CardContent>
           </Card>
           );

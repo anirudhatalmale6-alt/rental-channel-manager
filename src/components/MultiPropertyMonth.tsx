@@ -73,16 +73,21 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
     });
   }, [properties, bookings, visibleDays]);
 
-  // Occupancies for this month only
-  const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-  const nextMonth = month === 11 ? `${year + 1}-01-01` : `${year}-${String(month + 2).padStart(2, '0')}-01`;
-  const monthOccupancies = useMemo(() => {
+  // Occupancies for visible days only (not the whole month)
+  const visibleOccupancies = useMemo(() => {
+    if (visibleDays.length === 0) return [];
+    const rangeStart = visibleDays[0].dateStr;
+    // rangeEnd is the day AFTER the last visible day (for checkOut comparison)
+    const lastDay = visibleDays[visibleDays.length - 1];
+    const endDate = new Date(year, month, lastDay.day + 1);
+    const rangeEnd = toDateStr(endDate);
     const filtered = bookings.filter(b => {
       if (b.status === 'cancelled') return false;
-      return b.checkIn < nextMonth && b.checkOut > monthStart;
+      // Booking overlaps visible range if checkIn < rangeEnd AND checkOut > rangeStart
+      return b.checkIn < rangeEnd && b.checkOut > rangeStart;
     });
     return deduplicateBookings(filtered).sort((a, b) => a.checkIn.localeCompare(b.checkIn));
-  }, [bookings, monthStart, nextMonth]);
+  }, [bookings, visibleDays, year, month]);
 
   const handleScrollLeft = () => {
     setStartIdx(Math.max(0, startIdx - SCROLL_STEP));
@@ -234,21 +239,22 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
         </CardContent>
       </Card>
 
-      {/* Occupancies for this month */}
+      {/* Occupancies for visible days */}
       <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600, color: '#666' }}>
-        Occupancies ({MONTH_NAMES[month]} {year})
+        Occupancies ({MONTH_NAMES[month]} {visibleDays[0]?.day}–{visibleDays[visibleDays.length - 1]?.day})
       </Typography>
 
-      {monthOccupancies.length === 0 ? (
+      {visibleOccupancies.length === 0 ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 3 }}>
-            <Typography variant="body2" sx={{ color: '#999' }}>No reservations this month</Typography>
+            <Typography variant="body2" sx={{ color: '#999' }}>No reservations in this period</Typography>
           </CardContent>
         </Card>
       ) : (
-        monthOccupancies.map(booking => {
+        visibleOccupancies.map(booking => {
           const isBlocked = booking.status === 'blocked';
           const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
+          const channelLabel = !isBlocked && booking.channel !== 'manual' ? booking.channel.charAt(0).toUpperCase() + booking.channel.slice(1) : '';
           return (
           <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}` }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -263,13 +269,23 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
                   {isBlocked && (
                     <Typography variant="caption" sx={{ bgcolor: '#F5F5F5', px: 0.8, py: 0.2, borderRadius: 1, color: '#999', fontSize: 10 }}>Blocked</Typography>
                   )}
+                  {channelLabel && (
+                    <Typography variant="caption" sx={{ color: '#999', fontSize: 10 }}>via {channelLabel}</Typography>
+                  )}
                 </Box>
                 <Typography variant="body2" sx={{ color: '#444' }}>
                   {formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#888' }}>
-                  {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="caption" sx={{ color: '#888' }}>
+                    {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
+                  </Typography>
+                  {!isBlocked && booking.income > 0 && (
+                    <Typography variant="caption" sx={{ color: '#4CAF50', fontWeight: 600, fontSize: 11 }}>
+                      {booking.income.toFixed(2)} {booking.currency}
+                    </Typography>
+                  )}
+                </Box>
               </Box>
               <ChevronRightOutlinedIcon sx={{ color: '#ccc' }} />
             </CardContent>
