@@ -13,7 +13,7 @@ import AddIcon from '@mui/icons-material/Add';
 import { useRouter } from 'next/navigation';
 import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
 import { Property, Booking, BlockedDate } from '@/types';
-import { isDateInRange, toDateString, formatDate, deduplicateBookings } from '@/lib/date-utils';
+import { isDateInRange, toDateString, formatDate, deduplicateBookings, lightenColor } from '@/lib/date-utils';
 import WeekStrip from '@/components/WeekStrip';
 import ChannelIcon from '@/components/ChannelIcon';
 import { syncAllProperties } from '@/lib/sync';
@@ -198,7 +198,7 @@ export default function HomePage() {
           const isBlocked = booking.status === 'blocked';
           const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
           return (
-          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}` }}>
+          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}`, bgcolor: lightenColor(propColor, 0.85) }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
                 {isBlocked ? (

@@ -180,23 +180,23 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
           {/* Property rows */}
           {properties.map((prop, pi) => (
             <Box key={prop.id} sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-              {/* Property name - fixed left */}
-              <Typography
-                variant="body2"
-                sx={{
-                  width: 110,
-                  flexShrink: 0,
-                  fontWeight: 500,
-                  fontSize: 11,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  pr: 0.5,
-                  color: '#333',
-                }}
-              >
-                {prop.name}
-              </Typography>
+              {/* Property name - fixed left with color dot */}
+              <Box sx={{ width: 110, flexShrink: 0, display: 'flex', alignItems: 'center', gap: 0.5, pr: 0.5 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: prop.color, flexShrink: 0 }} />
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: 11,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    color: '#333',
+                  }}
+                >
+                  {prop.name}
+                </Typography>
+              </Box>
               {/* Day cells */}
               <Box sx={{ display: 'flex' }}>
                 {propertyDayStates[pi].map((booking, di) => {
@@ -256,7 +256,7 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
           const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
           const channelLabel = !isBlocked && booking.channel !== 'manual' ? booking.channel.charAt(0).toUpperCase() + booking.channel.slice(1) : '';
           return (
-          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}` }}>
+          <Card key={booking.id} sx={{ mb: 1, borderLeft: `4px solid ${isBlocked ? '#E0E0E0' : propColor}`, bgcolor: lightenColor(propColor, 0.85) }}>
             <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <Box sx={{ flex: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>

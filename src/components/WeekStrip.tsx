@@ -26,19 +26,30 @@ export default function WeekStrip({ property, bookings, weekDates }: Props) {
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, py: 0.5 }}>
-      <Typography
-        variant="body2"
+      <Box
         sx={{
           width: 140,
-          fontWeight: 500,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 0.5,
           pr: 1,
         }}
       >
-        {property.name}
-      </Typography>
+        <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: property.color, flexShrink: 0 }} />
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: 12,
+          }}
+        >
+          {property.name}
+        </Typography>
+      </Box>
       <Box sx={{ display: 'flex', flex: 1, gap: 0.25 }}>
         {dayStates.map((booking, i) => {
           const isOccupied = booking && booking.status !== 'blocked';
