@@ -6,33 +6,38 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
+import CircularProgress from '@mui/material/CircularProgress';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import SyncIcon from '@mui/icons-material/Sync';
 import AddIcon from '@mui/icons-material/Add';
+import BlockIcon from '@mui/icons-material/Block';
+import CloudDoneIcon from '@mui/icons-material/CloudDone';
+import CloudOffIcon from '@mui/icons-material/CloudOff';
 import { useRouter } from 'next/navigation';
 import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
 import { Property, Booking, BlockedDate } from '@/types';
 import { isDateInRange, toDateString, formatDate, deduplicateBookings, lightenColor } from '@/lib/date-utils';
 import WeekStrip from '@/components/WeekStrip';
-import ChannelIcon from '@/components/ChannelIcon';
 import { syncAllProperties } from '@/lib/sync';
 import BookingEditDialog from '@/components/BookingEditDialog';
+import BlockDatesDialog from '@/components/BlockDatesDialog';
+import { useCloudSync } from '@/lib/useCloudSync';
 
 export default function HomePage() {
   const router = useRouter();
+  const { loaded, cloudStatus } = useCloudSync();
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [weekOffset, setWeekOffset] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
+  const [blockDialog, setBlockDialog] = useState(false);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     const props = getProperties();
     setProperties(props);
     const allBookings = getBookings();
-    // Merge app-created blocked dates into bookings for display
-    // (only if not already present from iCal sync)
     const blocked = getBlockedDates();
     const blockedAsBookings: Booking[] = blocked.map(b => ({
       id: b.id,
@@ -51,6 +56,10 @@ export default function HomePage() {
     }));
     setBookings(deduplicateBookings([...allBookings, ...blockedAsBookings]));
   }, []);
+
+  useEffect(() => {
+    if (loaded) loadData();
+  }, [loaded, loadData]);
 
   const today = new Date();
   const weekStart = useMemo(() => {
@@ -83,17 +92,9 @@ export default function HomePage() {
     });
   }, [weekDates]);
 
-  // Occupancies for the displayed week — only bookings that overlap with the week shown
-  const weekEndDate = useMemo(() => {
-    const d = new Date(weekStart);
-    d.setDate(weekStart.getDate() + 6);
-    return toDateString(d.getFullYear(), d.getMonth(), d.getDate());
-  }, [weekStart]);
-
   const weekBookings = useMemo(() => {
     const weekStartStr = weekDates[0];
     const weekEndStr = weekDates[6];
-    // A booking overlaps if checkIn <= weekEnd AND checkOut > weekStart
     const filtered = bookings.filter(b => b.status !== 'cancelled' &&
       b.checkIn <= weekEndStr && b.checkOut > weekStartStr);
     return deduplicateBookings(filtered).sort((a, b) => a.checkIn.localeCompare(b.checkIn));
@@ -103,28 +104,21 @@ export default function HomePage() {
     setSyncing(true);
     try {
       await syncAllProperties();
-      const synced = getBookings();
-      const blocked = getBlockedDates();
-      const blockedAsBookings: Booking[] = blocked.map(b => ({
-        id: b.id,
-        propertyId: b.propertyId,
-        propertyName: properties.find(p => p.id === b.propertyId)?.name || '',
-        guestName: b.reason || 'Blocked',
-        checkIn: b.startDate,
-        checkOut: b.endDate,
-        adults: 0,
-        children: 0,
-        income: 0,
-        currency: 'EUR',
-        channel: 'blocked' as const,
-        status: 'blocked' as const,
-        uid: `block-${b.id}`,
-      }));
-      setBookings(deduplicateBookings([...synced, ...blockedAsBookings]));
+      loadData();
     } finally {
       setSyncing(false);
     }
-  }, [properties]);
+  }, [loadData]);
+
+  // Show loading while cloud sync initializes
+  if (!loaded) {
+    return (
+      <Box sx={{ p: 3, textAlign: 'center', mt: 8 }}>
+        <CircularProgress size={32} sx={{ mb: 2 }} />
+        <Typography sx={{ color: '#666' }}>Loading...</Typography>
+      </Box>
+    );
+  }
 
   if (properties.length === 0) {
     return (
@@ -149,10 +143,19 @@ export default function HomePage() {
     <Box sx={{ p: 2 }}>
       {/* Header */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 1 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>Overview</Typography>
-        <IconButton onClick={handleSync} disabled={syncing} color="primary">
-          <SyncIcon sx={{ animation: syncing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '100%': { transform: 'rotate(360deg)' } } }} />
-        </IconButton>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>Overview</Typography>
+          {cloudStatus === 'synced' && <CloudDoneIcon sx={{ fontSize: 16, color: '#4CAF50' }} />}
+          {cloudStatus === 'offline' && <CloudOffIcon sx={{ fontSize: 16, color: '#FF9800' }} />}
+        </Box>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <IconButton onClick={() => setBlockDialog(true)} color="default" size="small" title="Block dates">
+            <BlockIcon />
+          </IconButton>
+          <IconButton onClick={handleSync} disabled={syncing} color="primary">
+            <SyncIcon sx={{ animation: syncing ? 'spin 1s linear infinite' : 'none', '@keyframes spin': { '100%': { transform: 'rotate(360deg)' } } }} />
+          </IconButton>
+        </Box>
       </Box>
 
       {/* Week Navigator */}
@@ -240,6 +243,16 @@ export default function HomePage() {
         onClose={() => setEditBooking(null)}
         onSaved={(updated) => {
           setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
+        }}
+      />
+
+      <BlockDatesDialog
+        open={blockDialog}
+        properties={properties}
+        onClose={() => setBlockDialog(false)}
+        onSaved={() => {
+          setBlockDialog(false);
+          loadData();
         }}
       />
     </Box>

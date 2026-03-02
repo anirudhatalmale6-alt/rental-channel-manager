@@ -16,12 +16,14 @@ import CalendarViewMonthIcon from '@mui/icons-material/CalendarViewMonth';
 import { getProperties, getBookings, addBlockedDate, getBlockedDates, removeBlockedDate } from '@/lib/store';
 import { Property, Booking, BlockedDate } from '@/types';
 import { isDateInRange, deduplicateBookings } from '@/lib/date-utils';
+import { useCloudSync } from '@/lib/useCloudSync';
 import PropertySelector from '@/components/PropertySelector';
 import MonthCalendar from '@/components/MonthCalendar';
 import BookingCard from '@/components/BookingCard';
 import MultiPropertyMonth from '@/components/MultiPropertyMonth';
 
 export default function CalendarPage() {
+  const { loaded } = useCloudSync();
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
@@ -35,12 +37,13 @@ export default function CalendarPage() {
   const [viewMode, setViewMode] = useState<'single' | 'all'>('all');
 
   useEffect(() => {
+    if (!loaded) return;
     const props = getProperties();
     setProperties(props);
     setBookings(getBookings());
     setBlockedDates(getBlockedDates());
     if (props.length > 0) setSelectedProperty(props[0].id);
-  }, []);
+  }, [loaded]);
 
   const filteredBookings = useMemo(() => {
     if (!selectedProperty) return [];

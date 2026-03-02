@@ -22,8 +22,10 @@ import SyncIcon from '@mui/icons-material/Sync';
 import { getProperties, saveProperty, updateProperty, deleteProperty, getSyncStatuses } from '@/lib/store';
 import { syncProperty } from '@/lib/sync';
 import { Property, SyncStatus, CHANNEL_LABELS, Channel } from '@/types';
+import { useCloudSync } from '@/lib/useCloudSync';
 
 export default function SettingsPage() {
+  const { loaded } = useCloudSync();
   const [properties, setProperties] = useState<Property[]>([]);
   const [syncStatuses, setSyncStatuses] = useState<SyncStatus[]>([]);
   const [dialog, setDialog] = useState(false);
@@ -37,9 +39,11 @@ export default function SettingsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   useEffect(() => {
-    setProperties(getProperties());
-    setSyncStatuses(getSyncStatuses());
-  }, []);
+    if (loaded) {
+      setProperties(getProperties());
+      setSyncStatuses(getSyncStatuses());
+    }
+  }, [loaded]);
 
   const openAdd = () => {
     setEditing(null);
@@ -183,11 +187,16 @@ export default function SettingsPage() {
                 )}
 
                 {/* Export URL */}
-                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                  <Typography variant="caption" sx={{ color: '#999' }}>Export URL:</Typography>
-                  <IconButton size="small" onClick={() => copyToClipboard(getExportUrl(property.id))}>
-                    <ContentCopyIcon sx={{ fontSize: 14 }} />
-                  </IconButton>
+                <Box sx={{ mt: 1 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                    <Typography variant="caption" sx={{ color: '#999' }}>Export iCal URL (for Airbnb/Vrbo import):</Typography>
+                    <IconButton size="small" onClick={() => copyToClipboard(getExportUrl(property.id))}>
+                      <ContentCopyIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Box>
+                  <Typography variant="caption" sx={{ color: '#bbb', fontSize: 10, display: 'block' }}>
+                    Paste this URL into Airbnb/Vrbo &quot;Import calendar&quot; to push your blocked dates to them
+                  </Typography>
                 </Box>
               </CardContent>
             </Card>

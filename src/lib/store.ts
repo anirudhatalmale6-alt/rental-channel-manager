@@ -1,5 +1,6 @@
 import { Property, Booking, BlockedDate, SyncStatus, PROPERTY_COLORS } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
+import { schedulePush } from './cloud-sync';
 
 const STORAGE_KEYS = {
   properties: 'rcm_properties',
@@ -21,6 +22,22 @@ function getItem<T>(key: string, fallback: T): T {
 function setItem(key: string, value: unknown) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(key, JSON.stringify(value));
+}
+
+// Schedule a cloud push after any data change
+function triggerCloudSync() {
+  if (typeof window === 'undefined') return;
+  const properties = getItem<Property[]>(STORAGE_KEYS.properties, []);
+  const bookings = getItem<Booking[]>(STORAGE_KEYS.bookings, []);
+  const blockedDates = getItem<BlockedDate[]>(STORAGE_KEYS.blockedDates, []);
+  schedulePush(properties, bookings, blockedDates);
+}
+
+// Bulk load from cloud — used on initial page load
+export function loadCloudData(properties: Property[], bookings: Booking[], blockedDates: BlockedDate[]) {
+  setItem(STORAGE_KEYS.properties, properties);
+  setItem(STORAGE_KEYS.bookings, bookings);
+  setItem(STORAGE_KEYS.blockedDates, blockedDates);
 }
 
 // Properties
@@ -51,6 +68,7 @@ export function saveProperty(property: Omit<Property, 'id' | 'createdAt' | 'colo
   };
   properties.push(newProp);
   setItem(STORAGE_KEYS.properties, properties);
+  triggerCloudSync();
   return newProp;
 }
 
@@ -60,6 +78,7 @@ export function updateProperty(id: string, updates: Partial<Property>): Property
   if (idx === -1) return null;
   properties[idx] = { ...properties[idx], ...updates };
   setItem(STORAGE_KEYS.properties, properties);
+  triggerCloudSync();
   return properties[idx];
 }
 
@@ -71,6 +90,7 @@ export function deleteProperty(id: string) {
   setItem(STORAGE_KEYS.bookings, bookings);
   const blocked = getBlockedDates().filter(b => b.propertyId !== id);
   setItem(STORAGE_KEYS.blockedDates, blocked);
+  triggerCloudSync();
 }
 
 // Bookings
@@ -84,6 +104,7 @@ export function getBookingsForProperty(propertyId: string): Booking[] {
 
 export function saveBookings(bookings: Booking[]) {
   setItem(STORAGE_KEYS.bookings, bookings);
+  triggerCloudSync();
 }
 
 export function upsertBooking(booking: Booking) {
@@ -95,6 +116,7 @@ export function upsertBooking(booking: Booking) {
     bookings.push({ ...booking, lastSynced: new Date().toISOString() });
   }
   setItem(STORAGE_KEYS.bookings, bookings);
+  triggerCloudSync();
 }
 
 export function updateBookingField(id: string, updates: Partial<Booking>) {
@@ -103,12 +125,14 @@ export function updateBookingField(id: string, updates: Partial<Booking>) {
   if (idx >= 0) {
     bookings[idx] = { ...bookings[idx], ...updates };
     setItem(STORAGE_KEYS.bookings, bookings);
+    triggerCloudSync();
   }
 }
 
 export function removeBooking(id: string) {
   const bookings = getBookings().filter(b => b.id !== id);
   setItem(STORAGE_KEYS.bookings, bookings);
+  triggerCloudSync();
 }
 
 // Blocked Dates
@@ -121,12 +145,14 @@ export function addBlockedDate(block: Omit<BlockedDate, 'id'>): BlockedDate {
   const newBlock: BlockedDate = { ...block, id: uuidv4() };
   blocked.push(newBlock);
   setItem(STORAGE_KEYS.blockedDates, blocked);
+  triggerCloudSync();
   return newBlock;
 }
 
 export function removeBlockedDate(id: string) {
   const blocked = getBlockedDates().filter(b => b.id !== id);
   setItem(STORAGE_KEYS.blockedDates, blocked);
+  triggerCloudSync();
 }
 
 // Sync Status
