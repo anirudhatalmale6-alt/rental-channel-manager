@@ -53,8 +53,10 @@ export function lightenColor(hex: string, amount: number = 0.5): string {
   return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
 
-// Deduplicate bookings: for same property + overlapping dates, keep confirmed over blocked
+// Deduplicate bookings: remove blocked entries that overlap with confirmed bookings on the same property
+// Also removes exact duplicates (same property + same dates)
 export function deduplicateBookings<T extends { propertyId: string; checkIn: string; checkOut: string; status: string }>(bookings: T[]): T[] {
+  // First pass: exact dedup (same property + dates), prefer confirmed over blocked
   const seen = new Map<string, T>();
   for (const b of bookings) {
     const key = `${b.propertyId}|${b.checkIn}|${b.checkOut}`;
@@ -62,11 +64,23 @@ export function deduplicateBookings<T extends { propertyId: string; checkIn: str
     if (!existing) {
       seen.set(key, b);
     } else if (existing.status === 'blocked' && b.status !== 'blocked') {
-      // Prefer confirmed booking over blocked
       seen.set(key, b);
     }
   }
-  return Array.from(seen.values());
+  const deduped = Array.from(seen.values());
+
+  // Second pass: remove blocked entries that overlap with a confirmed booking on the same property
+  // (e.g., Airbnb exports "Not available" with +1 day when Vrbo has the actual booking)
+  const confirmed = deduped.filter(b => b.status !== 'blocked');
+  return deduped.filter(b => {
+    if (b.status !== 'blocked') return true;
+    // Check if any confirmed booking on the same property overlaps this blocked entry
+    const hasOverlap = confirmed.some(c =>
+      c.propertyId === b.propertyId &&
+      c.checkIn < b.checkOut && c.checkOut > b.checkIn
+    );
+    return !hasOverlap;
+  });
 }
 
 export function getWeekDates(year: number, month: number, weekStart: Date): string[] {
