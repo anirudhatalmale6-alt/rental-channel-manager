@@ -64,7 +64,7 @@ export const CHANNEL_COLORS: Record<Channel, string> = {
 export const CHANNEL_LABELS: Record<Channel, string> = {
   airbnb: 'Airbnb',
   vrbo: 'Vrbo',
-  expedia: 'Expedia',
+  expedia: 'Other',
   manual: 'Manual',
   blocked: 'Blocked',
 };

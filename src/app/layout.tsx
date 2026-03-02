@@ -10,7 +10,7 @@ import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Rental Channel Manager',
-  description: 'Manage your rental properties across Airbnb, Vrbo and Expedia',
+  description: 'Manage your rental properties across Airbnb, Vrbo and more',
   manifest: '/manifest.json',
 };
 

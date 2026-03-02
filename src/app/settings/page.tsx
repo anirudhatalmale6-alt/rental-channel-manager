@@ -21,7 +21,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SyncIcon from '@mui/icons-material/Sync';
 import { getProperties, saveProperty, updateProperty, deleteProperty, getSyncStatuses } from '@/lib/store';
 import { syncProperty } from '@/lib/sync';
-import { Property, SyncStatus } from '@/types';
+import { Property, SyncStatus, CHANNEL_LABELS, Channel } from '@/types';
 
 export default function SettingsPage() {
   const [properties, setProperties] = useState<Property[]>([]);
@@ -167,7 +167,7 @@ export default function SettingsPage() {
                 {/* Connected channels */}
                 <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
                   {channels.map(([ch]) => (
-                    <Chip key={ch} label={ch.charAt(0).toUpperCase() + ch.slice(1)} size="small" variant="outlined" sx={{ fontSize: 11 }} />
+                    <Chip key={ch} label={CHANNEL_LABELS[ch as Channel] || ch.charAt(0).toUpperCase() + ch.slice(1)} size="small" variant="outlined" sx={{ fontSize: 11 }} />
                   ))}
                   {channels.length === 0 && (
                     <Typography variant="caption" sx={{ color: '#999' }}>No iCal feeds connected</Typography>
@@ -229,12 +229,12 @@ export default function SettingsPage() {
             placeholder="https://www.vrbo.com/icalendar/..."
           />
           <TextField
-            label="Expedia iCal URL"
+            label="Other iCal URL"
             fullWidth
             value={expediaUrl}
             onChange={e => setExpediaUrl(e.target.value)}
             size="small"
-            placeholder="https://www.expedia.com/calendar/ical/..."
+            placeholder="https://... (any iCal feed URL)"
           />
         </DialogContent>
         <DialogActions>
