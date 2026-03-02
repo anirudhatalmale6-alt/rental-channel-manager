@@ -1,13 +1,12 @@
-// Service Worker - Network First strategy for PWA updates
-const CACHE_VERSION = 'rcm-v2';
+// Service Worker - Network First for all requests
+// Bump version to clear old caches on update
+const CACHE_VERSION = 'rcm-v3';
 
 self.addEventListener('install', (event) => {
-  // Activate immediately, don't wait
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
-  // Claim all clients immediately
   event.waitUntil(
     caches.keys().then((names) => {
       return Promise.all(
@@ -19,41 +18,10 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-
-  // Only handle same-origin GET requests
   if (request.method !== 'GET') return;
   if (!request.url.startsWith(self.location.origin)) return;
 
-  // For navigation requests (HTML pages) - always network first
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => caches.match(request))
-    );
-    return;
-  }
-
-  // For Next.js static assets (_next/static/) - cache first (they have hashed names)
-  if (request.url.includes('/_next/static/')) {
-    event.respondWith(
-      caches.match(request).then((cached) => {
-        if (cached) return cached;
-        return fetch(request).then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(request, clone));
-          return response;
-        });
-      })
-    );
-    return;
-  }
-
-  // Everything else - network first with cache fallback
+  // Network first for everything — always show latest content
   event.respondWith(
     fetch(request)
       .then((response) => {
