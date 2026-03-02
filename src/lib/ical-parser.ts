@@ -28,6 +28,21 @@ function unfoldLines(text: string): string {
   return text.replace(/\r?\n[ \t]/g, '');
 }
 
+function extractGuestFromDescription(desc: string): string {
+  if (!desc) return '';
+  // Unescape iCal description (\\n → newline)
+  const text = desc.replace(/\\n/g, '\n').replace(/\\,/g, ',');
+  // Try common patterns: "Guest: Name", "Name: Value" on first line
+  const guestMatch = text.match(/(?:guest|name|customer)\s*[:=]\s*(.+)/i);
+  if (guestMatch) return guestMatch[1].trim();
+  // Airbnb often has the first line as the guest name if it's not a URL/phone/date
+  const firstLine = text.split('\n').map(l => l.trim()).find(l => l.length > 0);
+  if (firstLine && !firstLine.match(/^(http|phone|reservation|check|email|\d{4})/i) && firstLine.length < 60) {
+    return firstLine;
+  }
+  return '';
+}
+
 export function parseICalData(
   icalText: string,
   propertyId: string,
@@ -50,6 +65,7 @@ export function parseICalData(
       const dtStart = event['DTSTART'] || event['DTSTART;VALUE=DATE'] || '';
       const dtEnd = event['DTEND'] || event['DTEND;VALUE=DATE'] || '';
       const summary = event['SUMMARY'] || '';
+      const description = event['DESCRIPTION'] || '';
       const uid = event['UID'] || uuidv4();
 
       if (dtStart && dtEnd) {
@@ -57,7 +73,7 @@ export function parseICalData(
         const checkOut = parseDate(dtEnd);
         const channel = detectChannel(sourceUrl, summary);
 
-        // Try to extract guest name from summary
+        // Try to extract guest name from summary and description
         let guestName = 'Guest';
         let status: Booking['status'] = 'confirmed';
 
@@ -66,10 +82,11 @@ export function parseICalData(
           const lowerSummary = summary.toLowerCase();
           if (lowerSummary.includes('not available') || lowerSummary.includes('blocked') || lowerSummary.includes('unavailable')) {
             status = 'blocked';
-            // Keep the summary as a note — might contain useful info beyond just "Not available"
             guestName = (lowerSummary === 'not available' || lowerSummary === 'blocked' || lowerSummary === 'unavailable') ? '' : summary;
           } else if (lowerSummary === 'reserved' || lowerSummary === 'booked') {
-            guestName = 'Reserved';
+            // Summary is generic — try to find guest name in DESCRIPTION
+            const descName = extractGuestFromDescription(description);
+            guestName = descName ? `Reserved - ${descName}` : 'Reserved';
           } else {
             // Use summary as guest name, clean up common prefixes
             guestName = summary
