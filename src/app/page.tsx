@@ -129,7 +129,7 @@ export default function HomePage() {
   if (properties.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center', mt: 8 }}>
-        <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>Kerlaret Rental</Typography>
+        <Typography variant="h5" sx={{ mb: 2, fontWeight: 700 }}>Kerlaret Rentals</Typography>
         <Typography sx={{ mb: 3, color: '#666' }}>
           Get started by adding your properties and connecting your iCal feeds.
         </Typography>

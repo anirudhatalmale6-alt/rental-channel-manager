@@ -9,7 +9,7 @@ import SWRegister from '@/components/SWRegister';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Kerlaret Rental',
+  title: 'Kerlaret Rentals',
   description: 'Manage your rental properties across Airbnb, Vrbo and more',
   manifest: '/manifest.json',
 };
