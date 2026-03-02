@@ -266,7 +266,7 @@ export default function MultiPropertyMonth({ year, month, properties, bookings, 
                   {isBlocked ? (
                     <Box sx={{ width: 20, height: 20, borderRadius: '50%', bgcolor: '#E0E0E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, color: '#999' }}>✕</Box>
                   ) : (
-                    <ChannelIcon channel={booking.channel} size="small" />
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: propColor, flexShrink: 0 }} />
                   )}
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>{booking.propertyName}</Typography>
                   {isBlocked && (
