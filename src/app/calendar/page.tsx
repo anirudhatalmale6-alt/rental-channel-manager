@@ -56,8 +56,16 @@ export default function CalendarPage() {
   }, [filteredBookings, selectedDate]);
 
   const selectedPropertyBlocks = useMemo(() => {
-    return blockedDates.filter(b => b.propertyId === selectedProperty);
-  }, [blockedDates, selectedProperty]);
+    // Only show blocks that overlap with the currently displayed month
+    const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const nextMonth = month === 11 ? 0 : month + 1;
+    const nextYear = month === 11 ? year + 1 : year;
+    const monthEnd = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-01`;
+    return blockedDates.filter(b =>
+      b.propertyId === selectedProperty &&
+      b.startDate < monthEnd && b.endDate > monthStart
+    );
+  }, [blockedDates, selectedProperty, year, month]);
 
   // Convert ALL blocked dates to booking objects for display
   const allBlockedAsBookings = useMemo((): Booking[] => {
