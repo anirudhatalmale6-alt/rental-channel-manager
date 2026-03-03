@@ -20,10 +20,16 @@ interface Props {
 
 export default function BookingEditDialog({ booking, onClose, onSaved }: Props) {
   const [guestName, setGuestName] = useState('');
+  const [income, setIncome] = useState('');
+  const [adults, setAdults] = useState('');
+  const [children, setChildren] = useState('');
 
   useEffect(() => {
     if (booking) {
       setGuestName(booking.guestName || '');
+      setIncome(booking.income > 0 ? String(booking.income) : '');
+      setAdults(booking.adults > 0 ? String(booking.adults) : '');
+      setChildren(booking.children > 0 ? String(booking.children) : '');
     }
   }, [booking]);
 
@@ -32,8 +38,14 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
   const isBlocked = booking.status === 'blocked';
 
   const handleSave = () => {
-    updateBookingField(booking.id, { guestName: guestName.trim() || 'Guest' });
-    onSaved({ ...booking, guestName: guestName.trim() || 'Guest' });
+    const updates: Partial<Booking> = {
+      guestName: guestName.trim() || 'Guest',
+      income: parseFloat(income) || 0,
+      adults: parseInt(adults) || 0,
+      children: parseInt(children) || 0,
+    };
+    updateBookingField(booking.id, updates);
+    onSaved({ ...booking, ...updates });
     onClose();
   };
 
@@ -59,7 +71,36 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
           size="small"
           autoFocus
           placeholder="Enter guest name"
+          sx={{ mb: 1.5 }}
         />
+        <TextField
+          label="Income (€)"
+          fullWidth
+          value={income}
+          onChange={e => setIncome(e.target.value)}
+          size="small"
+          type="number"
+          placeholder="e.g., 450"
+          sx={{ mb: 1.5 }}
+        />
+        <Box sx={{ display: 'flex', gap: 1.5 }}>
+          <TextField
+            label="Adults"
+            value={adults}
+            onChange={e => setAdults(e.target.value)}
+            size="small"
+            type="number"
+            sx={{ flex: 1 }}
+          />
+          <TextField
+            label="Children"
+            value={children}
+            onChange={e => setChildren(e.target.value)}
+            size="small"
+            type="number"
+            sx={{ flex: 1 }}
+          />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>

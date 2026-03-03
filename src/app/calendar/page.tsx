@@ -20,6 +20,7 @@ import { useCloudSync } from '@/lib/useCloudSync';
 import PropertySelector from '@/components/PropertySelector';
 import MonthCalendar from '@/components/MonthCalendar';
 import BookingCard from '@/components/BookingCard';
+import BookingEditDialog from '@/components/BookingEditDialog';
 import MultiPropertyMonth from '@/components/MultiPropertyMonth';
 
 export default function CalendarPage() {
@@ -35,6 +36,7 @@ export default function CalendarPage() {
   const [blockEndDate, setBlockEndDate] = useState('');
   const [blockReason, setBlockReason] = useState('');
   const [viewMode, setViewMode] = useState<'single' | 'all'>('all');
+  const [editBooking, setEditBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (!loaded) return;
@@ -177,7 +179,7 @@ export default function CalendarPage() {
             propertyColor={properties.find(p => p.id === selectedProperty)?.color}
             selectedDate={selectedDate}
             onSelectDate={setSelectedDate}
-            onMonthChange={(y, m) => { setYear(y); setMonth(m); }}
+            onMonthChange={(y, m) => { setYear(y); setMonth(m); setSelectedDate(''); }}
           />
 
           {selectedDate && (
@@ -202,7 +204,9 @@ export default function CalendarPage() {
                 Reservations on {selectedDate}
               </Typography>
               {selectedDayBookings.map(b => (
-                <BookingCard key={b.id} booking={b} />
+                <Box key={b.id} onClick={() => setEditBooking(b)} sx={{ cursor: 'pointer' }}>
+                  <BookingCard booking={b} />
+                </Box>
               ))}
             </Box>
           )}
@@ -254,6 +258,15 @@ export default function CalendarPage() {
               <Button onClick={handleBlockDates} variant="contained">Block</Button>
             </DialogActions>
           </Dialog>
+
+          <BookingEditDialog
+            booking={editBooking}
+            onClose={() => setEditBooking(null)}
+            onSaved={(updated) => {
+              setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
+              setEditBooking(null);
+            }}
+          />
         </>
       )}
     </Box>
