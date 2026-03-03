@@ -56,9 +56,13 @@ export default function SummaryPage() {
     return filtered.sort((a, b) => a.checkIn.localeCompare(b.checkIn));
   }, [bookings, selectedYear]);
 
-  // Real bookings only (exclude blocked) for summary totals
+  // Real bookings for summary totals (blocked with income count too)
   const realBookings = useMemo(() => {
-    return sortedBookings.filter(b => b.status !== 'blocked' && b.channel !== 'blocked');
+    return sortedBookings.filter(b => {
+      if (b.status === 'cancelled') return false;
+      if (b.status === 'blocked' || b.channel === 'blocked') return b.income > 0;
+      return true;
+    });
   }, [sortedBookings]);
 
   // Year summary stats

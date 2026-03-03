@@ -15,8 +15,11 @@ import PropertySelector from '@/components/PropertySelector';
 import { useCloudSync } from '@/lib/useCloudSync';
 
 function isRealBooking(b: Booking): boolean {
-  if (b.status === 'cancelled' || b.status === 'blocked') return false;
-  if (b.channel === 'blocked') return false;
+  if (b.status === 'cancelled') return false;
+  // Blocked dates with income count as real bookings (e.g., direct bookings)
+  if (b.status === 'blocked' || b.channel === 'blocked') {
+    return b.income > 0;
+  }
   return true;
 }
 
