@@ -235,11 +235,9 @@ export default function SummaryPage() {
                     </Box>
 
                     {/* Guest name */}
-                    {!isBlocked && (
-                      <Typography variant="caption" sx={{ color: '#666', mt: 0.5, display: 'block' }}>
-                        {booking.guestName || 'Guest'}
-                      </Typography>
-                    )}
+                    <Typography variant="caption" sx={{ color: '#666', mt: 0.5, display: 'block' }}>
+                      {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
+                    </Typography>
 
                     {/* Checklist preview */}
                     {booking.checklist && booking.checklist.length > 0 && (
