@@ -86,7 +86,14 @@ export function parseICalData(
           } else if (lowerSummary === 'reserved' || lowerSummary === 'booked') {
             // Summary is generic — try to find guest name in DESCRIPTION
             const descName = extractGuestFromDescription(description);
-            guestName = descName ? `Reserved - ${descName}` : 'Reserved';
+            if (descName) {
+              guestName = `Reserved - ${descName}`;
+            } else {
+              // No guest info at all — this is likely a host-blocked date
+              // (VRBO/Airbnb export blocked dates as "Reserved" with no details)
+              status = 'blocked';
+              guestName = 'Reserved';
+            }
           } else {
             // Use summary as guest name, clean up common prefixes
             guestName = summary
