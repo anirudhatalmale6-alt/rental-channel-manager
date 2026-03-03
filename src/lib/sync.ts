@@ -38,6 +38,35 @@ export async function syncProperty(propertyId: string): Promise<Booking[]> {
   return allNewBookings;
 }
 
+// Merge user-edited fields from an existing booking into a freshly synced one
+function mergeUserEdits(newBooking: Booking, existing: Booking): Booking {
+  const merged = { ...newBooking };
+
+  // Preserve income if user entered it
+  if (existing.income > 0) merged.income = existing.income;
+
+  // Preserve guest count if user entered it
+  if (existing.adults > 0) merged.adults = existing.adults;
+  if (existing.children > 0) merged.children = existing.children;
+
+  // Preserve guest name if user changed it from a default
+  const defaultNames = ['reserved', 'guest', 'not available', 'blocked', ''];
+  const existingNameLower = (existing.guestName || '').toLowerCase().trim();
+  if (!defaultNames.includes(existingNameLower) && !existingNameLower.startsWith('reserved -')) {
+    merged.guestName = existing.guestName;
+  } else if (existingNameLower.startsWith('reserved -') && merged.guestName === 'Reserved') {
+    // Keep "Reserved - Name" if new parse lost the name
+    merged.guestName = existing.guestName;
+  }
+
+  // Preserve checklist
+  if (existing.checklist && existing.checklist.length > 0) {
+    merged.checklist = existing.checklist;
+  }
+
+  return merged;
+}
+
 export async function syncAllProperties(): Promise<void> {
   const properties = getProperties();
   const existingBookings = getBookings();
@@ -46,6 +75,14 @@ export async function syncAllProperties(): Promise<void> {
   const manualBookings = existingBookings.filter(
     b => b.channel === 'manual'
   );
+
+  // Index existing iCal bookings by property+dates for merging user edits
+  const existingByKey = new Map<string, Booking>();
+  existingBookings.forEach(b => {
+    if (b.channel !== 'manual') {
+      existingByKey.set(`${b.propertyId}|${b.checkIn}|${b.checkOut}`, b);
+    }
+  });
 
   const syncedBookings: Booking[] = [...manualBookings];
 
@@ -58,7 +95,15 @@ export async function syncAllProperties(): Promise<void> {
       });
 
       const newBookings = await syncProperty(property.id);
-      syncedBookings.push(...newBookings);
+
+      // Merge user edits from existing bookings
+      const mergedBookings = newBookings.map(nb => {
+        const key = `${nb.propertyId}|${nb.checkIn}|${nb.checkOut}`;
+        const existing = existingByKey.get(key);
+        return existing ? mergeUserEdits(nb, existing) : nb;
+      });
+
+      syncedBookings.push(...mergedBookings);
 
       updateSyncStatus({
         propertyId: property.id,
@@ -76,6 +121,5 @@ export async function syncAllProperties(): Promise<void> {
   }
 
   // Deduplicate: same property + same dates from multiple channels → keep one
-  // (e.g. Airbnb, Vrbo, Expedia all export "Not available" for the same blocked dates)
   saveBookings(deduplicateBookings(syncedBookings));
 }

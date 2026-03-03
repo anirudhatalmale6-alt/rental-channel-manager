@@ -5,12 +5,14 @@ import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import Paper from '@mui/material/Paper';
 import HomeIcon from '@mui/icons-material/Home';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import ListAltIcon from '@mui/icons-material/ListAlt';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import SettingsIcon from '@mui/icons-material/Settings';
 
 const NAV_ITEMS = [
   { label: 'Home', icon: <HomeIcon />, path: '/' },
   { label: 'Calendar', icon: <CalendarMonthIcon />, path: '/calendar' },
+  { label: 'Summary', icon: <ListAltIcon />, path: '/summary' },
   { label: 'Stats', icon: <BarChartIcon />, path: '/stats' },
   { label: 'Settings', icon: <SettingsIcon />, path: '/settings' },
 ];
