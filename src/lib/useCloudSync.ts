@@ -4,11 +4,22 @@ import { loadFromCloud } from './cloud-sync';
 import { getProperties, getBookings, getBlockedDates, loadCloudData } from './store';
 import { Property, Booking, BlockedDate } from '@/types';
 
+// Session-level singleton: cloud sync only runs once per app session
+let sessionSynced = false;
+let sessionCloudStatus: 'loading' | 'synced' | 'offline' | 'local' = 'loading';
+
 export function useCloudSync() {
-  const [loaded, setLoaded] = useState(false);
-  const [cloudStatus, setCloudStatus] = useState<'loading' | 'synced' | 'offline' | 'local'>('loading');
+  const [loaded, setLoaded] = useState(sessionSynced);
+  const [cloudStatus, setCloudStatus] = useState(sessionCloudStatus);
 
   useEffect(() => {
+    // If already synced this session, just read from localStorage
+    if (sessionSynced) {
+      setLoaded(true);
+      setCloudStatus(sessionCloudStatus);
+      return;
+    }
+
     let cancelled = false;
 
     async function init() {
@@ -27,8 +38,7 @@ export function useCloudSync() {
         const localHasData = localProps.length > 0;
 
         if (cloudHasData) {
-          // Cloud has data — use it (cloud is source of truth)
-          // But preserve any local guest name edits that aren't in cloud
+          // Cloud has data — merge with local edits
           const mergedBookings = mergeBookings(
             cloud.bookings as Booking[],
             localBookings
@@ -38,21 +48,21 @@ export function useCloudSync() {
             mergedBookings,
             cloud.blockedDates as BlockedDate[]
           );
-          setCloudStatus('synced');
+          sessionCloudStatus = 'synced';
         } else if (localHasData) {
-          // Cloud is empty but local has data — push local to cloud (first-time sync)
+          // Cloud is empty but local has data — push local to cloud
           const { pushToCloud } = await import('./cloud-sync');
           await pushToCloud(localProps, localBookings, localBlocked);
-          setCloudStatus('synced');
+          sessionCloudStatus = 'synced';
         } else {
-          // Both empty — nothing to do
-          setCloudStatus('synced');
+          sessionCloudStatus = 'synced';
         }
       } else {
-        // Cloud unavailable — use local data
-        setCloudStatus(localProps.length > 0 ? 'offline' : 'local');
+        sessionCloudStatus = localProps.length > 0 ? 'offline' : 'local';
       }
 
+      sessionSynced = true;
+      setCloudStatus(sessionCloudStatus);
       setLoaded(true);
     }
 
@@ -77,35 +87,36 @@ function mergeBookings(cloudBookings: Booking[], localBookings: Booking[]): Book
 
     const result = { ...cloud };
 
-    // Preserve guest name edits
+    // Preserve guest name: prefer local if it's a real name
     const defaultNames = ['guest', 'reserved', 'not available', 'blocked', ''];
     const localNameLower = (local.guestName || '').toLowerCase().trim();
+    const cloudNameLower = (cloud.guestName || '').toLowerCase().trim();
     if (!defaultNames.includes(localNameLower)) {
       result.guestName = local.guestName;
     }
 
-    // Preserve income if locally edited
-    if (local.income > 0 && cloud.income === 0) {
+    // Preserve income: prefer whichever has a value (local wins ties)
+    if (local.income > 0) {
       result.income = local.income;
     }
 
-    // Preserve adults/children if locally edited
-    if (local.adults > 0 && cloud.adults === 0) {
+    // Preserve adults/children
+    if (local.adults > 0) {
       result.adults = local.adults;
     }
-    if (local.children > 0 && cloud.children === 0) {
+    if (local.children > 0) {
       result.children = local.children;
     }
 
-    // Preserve checklist if locally edited
-    if (local.checklist && local.checklist.length > 0 && (!cloud.checklist || cloud.checklist.length === 0)) {
+    // Preserve checklist
+    if (local.checklist && local.checklist.length > 0) {
       result.checklist = local.checklist;
     }
 
     return result;
   });
 
-  // Also include any local-only bookings (channel: 'manual') not in cloud
+  // Also include any local-only bookings not in cloud
   const cloudUids = new Set(cloudBookings.map(b => b.uid));
   const cloudIds = new Set(cloudBookings.map(b => b.id));
   for (const local of localBookings) {
