@@ -270,7 +270,7 @@ export default function HomePage() {
                 <Typography variant="caption" sx={{ color: '#666' }}>
                   {booking.guestName || (isBlocked ? 'Not available' : 'Guest')}
                 </Typography>
-                {!isBlocked && booking.income > 0 && (
+                {booking.income > 0 && (
                   <Typography variant="caption" sx={{ color: '#4CAF50', fontWeight: 600, fontSize: 11 }}>
                     {booking.income.toFixed(2)} {booking.currency}
                   </Typography>

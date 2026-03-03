@@ -52,7 +52,7 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
       children: parseInt(children) || 0,
       checklist: cleanChecklist,
     };
-    updateBookingField(booking.id, updates);
+    updateBookingField(booking.id, updates, booking);
     onSaved({ ...booking, ...updates });
     onClose();
   };

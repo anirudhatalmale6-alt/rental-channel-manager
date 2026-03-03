@@ -119,14 +119,18 @@ export function upsertBooking(booking: Booking) {
   triggerCloudSync();
 }
 
-export function updateBookingField(id: string, updates: Partial<Booking>) {
+export function updateBookingField(id: string, updates: Partial<Booking>, fullBooking?: Booking) {
   const bookings = getBookings();
   const idx = bookings.findIndex(b => b.id === id);
   if (idx >= 0) {
     bookings[idx] = { ...bookings[idx], ...updates };
-    setItem(STORAGE_KEYS.bookings, bookings);
-    triggerCloudSync();
+  } else if (fullBooking) {
+    // Booking not in array (e.g., blocked date converted to fake booking)
+    // Save it as a real booking entry so edits persist
+    bookings.push({ ...fullBooking, ...updates });
   }
+  setItem(STORAGE_KEYS.bookings, bookings);
+  triggerCloudSync();
 }
 
 export function removeBooking(id: string) {
