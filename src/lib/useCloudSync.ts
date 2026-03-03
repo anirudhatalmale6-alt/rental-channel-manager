@@ -63,19 +63,54 @@ export function useCloudSync() {
   return { loaded, cloudStatus };
 }
 
-// Merge cloud bookings with local edits (e.g., guest name changes)
+// Merge cloud bookings with local edits (guest name, income, checklist, etc.)
 function mergeBookings(cloudBookings: Booking[], localBookings: Booking[]): Booking[] {
-  const merged = [...cloudBookings];
-
-  // For each local booking, check if it has a different guestName than the cloud version
+  const localByKey = new Map<string, Booking>();
   for (const local of localBookings) {
-    const cloudIdx = merged.findIndex(b => b.uid === local.uid || b.id === local.id);
-    if (cloudIdx >= 0) {
-      // If local has a custom guest name (edited by user), prefer it
-      if (local.guestName && local.guestName !== 'Guest' && local.guestName !== 'Reserved' &&
-          local.guestName !== merged[cloudIdx].guestName) {
-        merged[cloudIdx].guestName = local.guestName;
-      }
+    if (local.uid) localByKey.set(`uid:${local.uid}`, local);
+    if (local.id) localByKey.set(`id:${local.id}`, local);
+  }
+
+  const merged = cloudBookings.map(cloud => {
+    const local = localByKey.get(`uid:${cloud.uid}`) || localByKey.get(`id:${cloud.id}`);
+    if (!local) return cloud;
+
+    const result = { ...cloud };
+
+    // Preserve guest name edits
+    const defaultNames = ['guest', 'reserved', 'not available', 'blocked', ''];
+    const localNameLower = (local.guestName || '').toLowerCase().trim();
+    if (!defaultNames.includes(localNameLower)) {
+      result.guestName = local.guestName;
+    }
+
+    // Preserve income if locally edited
+    if (local.income > 0 && cloud.income === 0) {
+      result.income = local.income;
+    }
+
+    // Preserve adults/children if locally edited
+    if (local.adults > 0 && cloud.adults === 0) {
+      result.adults = local.adults;
+    }
+    if (local.children > 0 && cloud.children === 0) {
+      result.children = local.children;
+    }
+
+    // Preserve checklist if locally edited
+    if (local.checklist && local.checklist.length > 0 && (!cloud.checklist || cloud.checklist.length === 0)) {
+      result.checklist = local.checklist;
+    }
+
+    return result;
+  });
+
+  // Also include any local-only bookings (channel: 'manual') not in cloud
+  const cloudUids = new Set(cloudBookings.map(b => b.uid));
+  const cloudIds = new Set(cloudBookings.map(b => b.id));
+  for (const local of localBookings) {
+    if (!cloudUids.has(local.uid) && !cloudIds.has(local.id)) {
+      merged.push(local);
     }
   }
 
