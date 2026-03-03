@@ -17,10 +17,20 @@ export async function GET(
       return new NextResponse('Property not found', { status: 404 });
     }
 
+    // ?for=vrbo excludes vrbo-sourced bookings (so VRBO doesn't see its own bookings back)
+    // ?for=airbnb excludes airbnb-sourced bookings (same logic)
+    const forPlatform = request.nextUrl.searchParams.get('for')?.toLowerCase();
+
     // Get bookings and blocked dates for this property
-    const bookings = (data.bookings as Booking[]).filter(
+    let bookings = (data.bookings as Booking[]).filter(
       b => b.propertyId === propertyId && b.status !== 'cancelled'
     );
+
+    // Exclude bookings that originated from the target platform
+    if (forPlatform) {
+      bookings = bookings.filter(b => b.channel !== forPlatform);
+    }
+
     const blockedDates = (data.blockedDates as BlockedDate[]).filter(
       b => b.propertyId === propertyId
     );

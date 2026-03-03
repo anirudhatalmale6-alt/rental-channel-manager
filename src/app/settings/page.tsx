@@ -114,9 +114,10 @@ export default function SettingsPage() {
     }
   };
 
-  const getExportUrl = (propertyId: string) => {
+  const getExportUrl = (propertyId: string, forPlatform?: string) => {
     if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/api/ical-feed/${propertyId}`;
+    const base = `${window.location.origin}/api/ical-feed/${propertyId}`;
+    return forPlatform ? `${base}?for=${forPlatform}` : base;
   };
 
   const copyToClipboard = (text: string) => {
@@ -186,16 +187,37 @@ export default function SettingsPage() {
                   </Typography>
                 )}
 
-                {/* Export URL */}
+                {/* Per-platform Export URLs */}
                 <Box sx={{ mt: 1 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                    <Typography variant="caption" sx={{ color: '#999' }}>Export iCal URL (for Airbnb/Vrbo import):</Typography>
-                    <IconButton size="small" onClick={() => copyToClipboard(getExportUrl(property.id))}>
-                      <ContentCopyIcon sx={{ fontSize: 14 }} />
-                    </IconButton>
-                  </Box>
+                  <Typography variant="caption" sx={{ color: '#999', fontWeight: 600, display: 'block', mb: 0.5 }}>
+                    Export iCal URLs:
+                  </Typography>
+                  {property.icalUrls.airbnb && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                      <Typography variant="caption" sx={{ color: '#999' }}>→ Paste into Airbnb:</Typography>
+                      <IconButton size="small" onClick={() => copyToClipboard(getExportUrl(property.id, 'airbnb'))}>
+                        <ContentCopyIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                  {property.icalUrls.vrbo && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                      <Typography variant="caption" sx={{ color: '#999' }}>→ Paste into Vrbo:</Typography>
+                      <IconButton size="small" onClick={() => copyToClipboard(getExportUrl(property.id, 'vrbo'))}>
+                        <ContentCopyIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                  {property.icalUrls.expedia && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                      <Typography variant="caption" sx={{ color: '#999' }}>→ Paste into Other:</Typography>
+                      <IconButton size="small" onClick={() => copyToClipboard(getExportUrl(property.id, 'expedia'))}>
+                        <ContentCopyIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
                   <Typography variant="caption" sx={{ color: '#bbb', fontSize: 10, display: 'block' }}>
-                    Paste this URL into Airbnb/Vrbo &quot;Import calendar&quot; to push your blocked dates to them
+                    Each URL excludes that platform&apos;s own bookings to avoid conflicts
                   </Typography>
                 </Box>
               </CardContent>
