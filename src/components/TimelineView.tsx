@@ -206,9 +206,13 @@ export default function TimelineView({ year, month, properties, bookings, onMont
 
                     const barColor = isBlocked ? lightenColor(prop.color, 0.4) : prop.color;
                     const textColor = isBlocked ? '#666' : '#fff';
-                    const label = isBlocked
+                    const channelTag = !isBlocked && booking.channel !== 'manual' && booking.channel !== 'blocked'
+                      ? booking.channel.charAt(0).toUpperCase() + booking.channel.slice(1)
+                      : '';
+                    const name = isBlocked
                       ? (booking.guestName === 'Blocked' ? 'Blocked' : booking.guestName)
                       : (booking.guestName || 'Reserved');
+                    const label = channelTag ? `${name} · ${channelTag}` : name;
 
                     return (
                       <Box
