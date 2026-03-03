@@ -158,6 +158,50 @@ export default function HomePage() {
         </Box>
       </Box>
 
+      {/* Month Quick-Jump */}
+      <Box sx={{ mb: 1.5, display: 'flex', overflowX: 'auto', gap: 0.5, pb: 0.5, WebkitOverflowScrolling: 'touch', '&::-webkit-scrollbar': { display: 'none' } }}>
+        {Array.from({ length: 12 }, (_, i) => {
+          const m = (today.getMonth() + i) % 12;
+          const y = today.getFullYear() + Math.floor((today.getMonth() + i) / 12);
+          const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+          const isCurrentWeekMonth = weekStart.getMonth() === m && weekStart.getFullYear() === y;
+          return (
+            <Box
+              key={`${y}-${m}`}
+              onClick={() => {
+                // Jump to first Monday of this month
+                const firstDay = new Date(y, m, 1);
+                const dayOfWeek = firstDay.getDay();
+                const diff = dayOfWeek === 0 ? 1 : dayOfWeek === 1 ? 0 : 8 - dayOfWeek;
+                const targetMonday = new Date(y, m, 1 + diff);
+                // Calculate week offset from current week's Monday
+                const currentMonday = new Date(today);
+                const cd = currentMonday.getDay();
+                currentMonday.setDate(currentMonday.getDate() - cd + (cd === 0 ? -6 : 1));
+                currentMonday.setHours(0, 0, 0, 0);
+                targetMonday.setHours(0, 0, 0, 0);
+                const weekDiff = Math.round((targetMonday.getTime() - currentMonday.getTime()) / (7 * 86400000));
+                setWeekOffset(weekDiff);
+              }}
+              sx={{
+                px: 1.5,
+                py: 0.5,
+                borderRadius: 2,
+                bgcolor: isCurrentWeekMonth ? '#1976D2' : '#F5F5F5',
+                color: isCurrentWeekMonth ? '#fff' : '#666',
+                cursor: 'pointer',
+                flexShrink: 0,
+                '&:hover': { bgcolor: isCurrentWeekMonth ? '#1565C0' : '#E0E0E0' },
+              }}
+            >
+              <Typography sx={{ fontSize: 12, fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {monthNames[m]} {y !== today.getFullYear() ? y : ''}
+              </Typography>
+            </Box>
+          );
+        })}
+      </Box>
+
       {/* Week Navigator */}
       <Card sx={{ mb: 2 }}>
         <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>

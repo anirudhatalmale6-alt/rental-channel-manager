@@ -21,7 +21,7 @@ import PropertySelector from '@/components/PropertySelector';
 import MonthCalendar from '@/components/MonthCalendar';
 import BookingCard from '@/components/BookingCard';
 import BookingEditDialog from '@/components/BookingEditDialog';
-import MultiPropertyMonth from '@/components/MultiPropertyMonth';
+import TimelineView from '@/components/TimelineView';
 
 export default function CalendarPage() {
   const { loaded } = useCloudSync();
@@ -155,9 +155,9 @@ export default function CalendarPage() {
         </ToggleButtonGroup>
       </Box>
 
-      {/* Multi-property view */}
+      {/* Timeline view */}
       {viewMode === 'all' && (
-        <MultiPropertyMonth
+        <TimelineView
           year={year}
           month={month}
           properties={properties}
