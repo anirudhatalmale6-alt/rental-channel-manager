@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
@@ -10,7 +10,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
 import { Property, Booking, BlockedDate, CHANNEL_LABELS } from '@/types';
-import { formatDate, getNights, lightenColor } from '@/lib/date-utils';
+import { formatDate, getNights, lightenColor, deduplicateBookings } from '@/lib/date-utils';
 import { useCloudSync } from '@/lib/useCloudSync';
 import BookingEditDialog from '@/components/BookingEditDialog';
 
@@ -21,8 +21,7 @@ export default function SummaryPage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
 
-  useEffect(() => {
-    if (!loaded) return;
+  const loadData = useCallback(() => {
     const props = getProperties();
     setProperties(props);
     const allBookings = getBookings();
@@ -42,8 +41,12 @@ export default function SummaryPage() {
       status: 'blocked' as const,
       uid: `block-${b.id}`,
     }));
-    setBookings([...allBookings, ...blockedAsBookings]);
-  }, [loaded]);
+    setBookings(deduplicateBookings([...allBookings, ...blockedAsBookings]));
+  }, []);
+
+  useEffect(() => {
+    if (loaded) loadData();
+  }, [loaded, loadData]);
 
   const sortedBookings = useMemo(() => {
     let filtered = bookings.filter(b => b.status !== 'cancelled');

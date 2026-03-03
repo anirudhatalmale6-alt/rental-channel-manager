@@ -1,6 +1,6 @@
 // Service Worker - Network First for all requests
 // Bump version to clear old caches on update
-const CACHE_VERSION = 'rcm-v3';
+const CACHE_VERSION = 'rcm-v4';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
