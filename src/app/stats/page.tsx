@@ -9,19 +9,34 @@ import { getProperties, getBookings } from '@/lib/store';
 import { Property, Booking, CHANNEL_COLORS, CHANNEL_LABELS } from '@/types';
 import { getNights } from '@/lib/date-utils';
 import PropertySelector from '@/components/PropertySelector';
+import { useCloudSync } from '@/lib/useCloudSync';
+
+function isRealBooking(b: Booking): boolean {
+  // Exclude cancelled and blocked
+  if (b.status === 'cancelled' || b.status === 'blocked') return false;
+  if (b.channel === 'blocked') return false;
+  // Exclude placeholder entries (re-imported blocked dates that show as "Reserved" with no real data)
+  const name = (b.guestName || '').toLowerCase().trim();
+  const isPlaceholder = (name === 'reserved' || name === 'not available' || name === 'blocked' || name === '')
+    && b.income === 0 && b.adults === 0;
+  if (isPlaceholder) return false;
+  return true;
+}
 
 export default function StatsPage() {
+  const { loaded } = useCloudSync();
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedProperty, setSelectedProperty] = useState('all');
 
   useEffect(() => {
+    if (!loaded) return;
     setProperties(getProperties());
     setBookings(getBookings());
-  }, []);
+  }, [loaded]);
 
   const filteredBookings = useMemo(() => {
-    const active = bookings.filter(b => b.status !== 'cancelled' && b.status !== 'blocked');
+    const active = bookings.filter(isRealBooking);
     if (selectedProperty === 'all') return active;
     return active.filter(b => b.propertyId === selectedProperty);
   }, [bookings, selectedProperty]);
