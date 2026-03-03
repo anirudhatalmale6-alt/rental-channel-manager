@@ -71,6 +71,17 @@ export default function BookingCard({ booking }: { booking: Booking }) {
         <Box sx={{ mt: 1.5, display: 'flex', alignItems: 'center', gap: 1 }}>
           <ChannelIcon channel={booking.channel} size="medium" />
         </Box>
+
+        {/* Checklist */}
+        {booking.checklist && booking.checklist.length > 0 && (
+          <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+            {booking.checklist.map((item, i) => (
+              <Typography key={i} variant="caption" sx={{ fontSize: 11, color: item.checked ? '#4CAF50' : '#999', display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                {item.checked ? '✓' : '○'} {item.label}
+              </Typography>
+            ))}
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

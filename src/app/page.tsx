@@ -276,6 +276,15 @@ export default function HomePage() {
                   </Typography>
                 )}
               </Box>
+              {booking.checklist && booking.checklist.length > 0 && (
+                <Box sx={{ mt: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {booking.checklist.map((item, i) => (
+                    <Typography key={i} variant="caption" sx={{ fontSize: 10, color: item.checked ? '#4CAF50' : '#999', display: 'flex', alignItems: 'center', gap: 0.3 }}>
+                      {item.checked ? '✓' : '○'} {item.label}
+                    </Typography>
+                  ))}
+                </Box>
+              )}
             </CardContent>
           </Card>
           );
