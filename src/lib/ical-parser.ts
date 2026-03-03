@@ -88,9 +88,11 @@ export function parseICalData(
             const descName = extractGuestFromDescription(description);
             if (descName) {
               guestName = `Reserved - ${descName}`;
+            } else if (channel === 'airbnb') {
+              // Airbnb uses "Reserved" for real bookings (privacy — no guest name in iCal)
+              guestName = 'Reserved';
             } else {
-              // No guest info at all — this is likely a host-blocked date
-              // (VRBO/Airbnb export blocked dates as "Reserved" with no details)
+              // VRBO/other: "Reserved" with no guest details = host-blocked date
               status = 'blocked';
               guestName = 'Reserved';
             }

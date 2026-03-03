@@ -17,10 +17,6 @@ import { useCloudSync } from '@/lib/useCloudSync';
 function isRealBooking(b: Booking): boolean {
   if (b.status === 'cancelled' || b.status === 'blocked') return false;
   if (b.channel === 'blocked') return false;
-  const name = (b.guestName || '').toLowerCase().trim();
-  const isPlaceholder = (name === 'reserved' || name === 'not available' || name === 'blocked' || name === '')
-    && b.income === 0 && b.adults === 0;
-  if (isPlaceholder) return false;
   return true;
 }
 
