@@ -5,6 +5,9 @@ import Typography from '@mui/material/Typography';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
+import IconButton from '@mui/material/IconButton';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
 import { Property, Booking, BlockedDate, CHANNEL_LABELS } from '@/types';
 import { formatDate, getNights, lightenColor } from '@/lib/date-utils';
@@ -17,6 +20,7 @@ export default function SummaryPage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedProperty, setSelectedProperty] = useState('all');
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
@@ -48,8 +52,11 @@ export default function SummaryPage() {
     if (selectedProperty !== 'all') {
       filtered = filtered.filter(b => b.propertyId === selectedProperty);
     }
+    // Filter by year
+    const yearStr = String(selectedYear);
+    filtered = filtered.filter(b => b.checkIn.startsWith(yearStr));
     return filtered.sort((a, b) => a.checkIn.localeCompare(b.checkIn));
-  }, [bookings, selectedProperty]);
+  }, [bookings, selectedProperty, selectedYear]);
 
   // Group bookings by month
   const groupedByMonth = useMemo(() => {
@@ -102,6 +109,19 @@ export default function SummaryPage() {
           onChange={setSelectedProperty}
           showAll
         />
+      </Box>
+
+      {/* Year selector */}
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
+        <IconButton size="small" onClick={() => setSelectedYear(y => y - 1)}>
+          <ChevronLeftIcon />
+        </IconButton>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, mx: 2, minWidth: 50, textAlign: 'center' }}>
+          {selectedYear}
+        </Typography>
+        <IconButton size="small" onClick={() => setSelectedYear(y => y + 1)}>
+          <ChevronRightIcon />
+        </IconButton>
       </Box>
 
       {sortedBookings.length === 0 ? (
