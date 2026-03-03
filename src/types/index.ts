@@ -25,6 +25,7 @@ export interface Booking {
   status: 'confirmed' | 'pending' | 'cancelled' | 'blocked';
   uid: string;
   lastSynced?: string;
+  checklist?: { label: string; checked: boolean }[];
 }
 
 export interface BlockedDate {
