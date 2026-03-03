@@ -12,14 +12,12 @@ import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
 import { Property, Booking, BlockedDate, CHANNEL_LABELS } from '@/types';
 import { formatDate, getNights, lightenColor } from '@/lib/date-utils';
 import { useCloudSync } from '@/lib/useCloudSync';
-import PropertySelector from '@/components/PropertySelector';
 import BookingEditDialog from '@/components/BookingEditDialog';
 
 export default function SummaryPage() {
   const { loaded } = useCloudSync();
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [selectedProperty, setSelectedProperty] = useState('all');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
 
@@ -49,14 +47,24 @@ export default function SummaryPage() {
 
   const sortedBookings = useMemo(() => {
     let filtered = bookings.filter(b => b.status !== 'cancelled');
-    if (selectedProperty !== 'all') {
-      filtered = filtered.filter(b => b.propertyId === selectedProperty);
-    }
     // Filter by year
     const yearStr = String(selectedYear);
     filtered = filtered.filter(b => b.checkIn.startsWith(yearStr));
     return filtered.sort((a, b) => a.checkIn.localeCompare(b.checkIn));
-  }, [bookings, selectedProperty, selectedYear]);
+  }, [bookings, selectedYear]);
+
+  // Real bookings only (exclude blocked) for summary totals
+  const realBookings = useMemo(() => {
+    return sortedBookings.filter(b => b.status !== 'blocked' && b.channel !== 'blocked');
+  }, [sortedBookings]);
+
+  // Year summary stats
+  const yearSummary = useMemo(() => {
+    const totalBookings = realBookings.length;
+    const totalNights = realBookings.reduce((sum, b) => sum + getNights(b.checkIn, b.checkOut), 0);
+    const totalIncome = realBookings.reduce((sum, b) => sum + (b.income || 0), 0);
+    return { totalBookings, totalNights, totalIncome };
+  }, [realBookings]);
 
   // Group bookings by month
   const groupedByMonth = useMemo(() => {
@@ -102,15 +110,6 @@ export default function SummaryPage() {
         <Typography variant="h6" sx={{ fontWeight: 700 }}>Summary</Typography>
       </Box>
 
-      <Box sx={{ mb: 2 }}>
-        <PropertySelector
-          properties={properties}
-          selectedId={selectedProperty}
-          onChange={setSelectedProperty}
-          showAll
-        />
-      </Box>
-
       {/* Year selector */}
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', mb: 2 }}>
         <IconButton size="small" onClick={() => setSelectedYear(y => y - 1)}>
@@ -124,10 +123,38 @@ export default function SummaryPage() {
         </IconButton>
       </Box>
 
+      {/* Year summary totals */}
+      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+        <Card sx={{ flex: 1, bgcolor: '#E3F2FD' }}>
+          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#1565C0' }}>
+              {yearSummary.totalBookings}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#666', fontSize: 10 }}>Bookings</Typography>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, bgcolor: '#E8F5E9' }}>
+          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#2E7D32' }}>
+              {yearSummary.totalNights}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#666', fontSize: 10 }}>Nights</Typography>
+          </CardContent>
+        </Card>
+        <Card sx={{ flex: 1, bgcolor: '#FFF3E0' }}>
+          <CardContent sx={{ p: 1.5, '&:last-child': { pb: 1.5 }, textAlign: 'center' }}>
+            <Typography variant="h5" sx={{ fontWeight: 700, color: '#E65100' }}>
+              {yearSummary.totalIncome > 0 ? `${yearSummary.totalIncome.toLocaleString()}` : '—'}
+            </Typography>
+            <Typography variant="caption" sx={{ color: '#666', fontSize: 10 }}>Income (EUR)</Typography>
+          </CardContent>
+        </Card>
+      </Box>
+
       {sortedBookings.length === 0 ? (
         <Card>
           <CardContent sx={{ textAlign: 'center', py: 4 }}>
-            <Typography sx={{ color: '#999' }}>No bookings yet</Typography>
+            <Typography sx={{ color: '#999' }}>No bookings for {selectedYear}</Typography>
           </CardContent>
         </Card>
       ) : (
@@ -141,7 +168,7 @@ export default function SummaryPage() {
               const isCancelled = booking.status === 'cancelled';
               const propColor = properties.find(p => p.id === booking.propertyId)?.color || '#999';
               const nights = getNights(booking.checkIn, booking.checkOut);
-              const channelLabel = booking.channel !== 'manual' && booking.channel !== 'blocked'
+              const channelLabel = booking.channel !== 'blocked'
                 ? CHANNEL_LABELS[booking.channel] || booking.channel
                 : '';
 
@@ -158,7 +185,7 @@ export default function SummaryPage() {
                   onClick={() => setEditBooking(booking)}
                 >
                   <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                    {/* Status + Property */}
+                    {/* Status + Channel */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                       <Typography variant="body2" sx={{ fontWeight: 700, color: getStatusColor(booking) }}>
                         {getStatusLabel(booking)}
