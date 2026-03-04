@@ -27,6 +27,8 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
   const [income, setIncome] = useState('');
   const [adults, setAdults] = useState('');
   const [children, setChildren] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [checklist, setChecklist] = useState<{ label: string; checked: boolean }[]>([]);
 
   useEffect(() => {
@@ -35,6 +37,8 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
       setIncome(booking.income > 0 ? String(booking.income) : '');
       setAdults(booking.adults > 0 ? String(booking.adults) : '');
       setChildren(booking.children > 0 ? String(booking.children) : '');
+      setEmail(booking.email || '');
+      setPhone(booking.phone || '');
       setChecklist(booking.checklist ? [...booking.checklist] : []);
     }
   }, [booking]);
@@ -50,6 +54,8 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
       income: parseFloat(income) || 0,
       adults: parseInt(adults) || 0,
       children: parseInt(children) || 0,
+      email: email.trim(),
+      phone: phone.trim(),
       checklist: cleanChecklist,
     };
     updateBookingField(booking.id, updates, booking);
@@ -111,7 +117,7 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
           placeholder="e.g., 450"
           sx={{ mb: 1.5 }}
         />
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 1.5, mb: 1.5 }}>
           <TextField
             label="Adults"
             value={adults}
@@ -129,6 +135,26 @@ export default function BookingEditDialog({ booking, onClose, onSaved }: Props) 
             sx={{ flex: 1 }}
           />
         </Box>
+        <TextField
+          label="Email"
+          fullWidth
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          size="small"
+          type="email"
+          placeholder="guest@example.com"
+          sx={{ mb: 1.5 }}
+        />
+        <TextField
+          label="Phone"
+          fullWidth
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+          size="small"
+          type="tel"
+          placeholder="+33 6 12 34 56 78"
+          sx={{ mb: 0 }}
+        />
 
         {/* Checklist */}
         <Box sx={{ mt: 2 }}>

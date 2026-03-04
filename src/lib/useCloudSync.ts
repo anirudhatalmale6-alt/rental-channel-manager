@@ -113,6 +113,10 @@ function mergeBookings(cloudBookings: Booking[], localBookings: Booking[]): Book
       result.checklist = local.checklist;
     }
 
+    // Preserve email and phone
+    if (local.email) result.email = local.email;
+    if (local.phone) result.phone = local.phone;
+
     return result;
   });
 

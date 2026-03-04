@@ -6,8 +6,11 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import Chip from '@mui/material/Chip';
 import IconButton from '@mui/material/IconButton';
+import Button from '@mui/material/Button';
+import Snackbar from '@mui/material/Snackbar';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EmailIcon from '@mui/icons-material/Email';
 import { getProperties, getBookings, getBlockedDates } from '@/lib/store';
 import { Property, Booking, BlockedDate, CHANNEL_LABELS } from '@/types';
 import { formatDate, getNights, lightenColor, deduplicateBookings } from '@/lib/date-utils';
@@ -20,6 +23,7 @@ export default function SummaryPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
+  const [snackbar, setSnackbar] = useState('');
 
   const loadData = useCallback(() => {
     const props = getProperties();
@@ -73,6 +77,31 @@ export default function SummaryPage() {
     return { totalBookings, totalNights, totalIncome };
   }, [realBookings]);
 
+  // Unique guest emails for export
+  const guestEmails = useMemo(() => {
+    const emails = new Set<string>();
+    for (const b of sortedBookings) {
+      if (b.email && b.email.trim() && b.status !== 'cancelled') {
+        emails.add(b.email.trim().toLowerCase());
+      }
+    }
+    return Array.from(emails).sort();
+  }, [sortedBookings]);
+
+  const handleExportEmails = () => {
+    if (guestEmails.length === 0) {
+      setSnackbar('No guest emails found for ' + selectedYear);
+      return;
+    }
+    const text = guestEmails.join(', ');
+    navigator.clipboard.writeText(text).then(() => {
+      setSnackbar(`${guestEmails.length} email${guestEmails.length > 1 ? 's' : ''} copied!`);
+    }).catch(() => {
+      // Fallback: show in prompt
+      window.prompt('Guest emails:', text);
+    });
+  };
+
   // Group bookings by month
   const groupedByMonth = useMemo(() => {
     const groups: { label: string; bookings: Booking[] }[] = [];
@@ -115,6 +144,14 @@ export default function SummaryPage() {
     <Box sx={{ p: 2, pb: 10 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 1 }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>Summary</Typography>
+        <Button
+          size="small"
+          startIcon={<EmailIcon />}
+          onClick={handleExportEmails}
+          sx={{ textTransform: 'none', fontSize: 12 }}
+        >
+          Export Emails{guestEmails.length > 0 ? ` (${guestEmails.length})` : ''}
+        </Button>
       </Box>
 
       {/* Year selector */}
@@ -268,6 +305,13 @@ export default function SummaryPage() {
           setBookings(prev => prev.map(b => b.id === updated.id ? updated : b));
           setEditBooking(null);
         }}
+      />
+
+      <Snackbar
+        open={!!snackbar}
+        autoHideDuration={3000}
+        onClose={() => setSnackbar('')}
+        message={snackbar}
       />
     </Box>
   );

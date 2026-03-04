@@ -64,6 +64,10 @@ function mergeUserEdits(newBooking: Booking, existing: Booking): Booking {
     merged.checklist = existing.checklist;
   }
 
+  // Preserve email and phone
+  if (existing.email) merged.email = existing.email;
+  if (existing.phone) merged.phone = existing.phone;
+
   return merged;
 }
 

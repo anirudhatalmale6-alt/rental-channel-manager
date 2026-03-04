@@ -22,6 +22,7 @@ import WeekStrip from '@/components/WeekStrip';
 import { syncAllProperties } from '@/lib/sync';
 import BookingEditDialog from '@/components/BookingEditDialog';
 import BlockDatesDialog from '@/components/BlockDatesDialog';
+import AddBookingDialog from '@/components/AddBookingDialog';
 import { useCloudSync } from '@/lib/useCloudSync';
 
 export default function HomePage() {
@@ -33,6 +34,7 @@ export default function HomePage() {
   const [syncing, setSyncing] = useState(false);
   const [editBooking, setEditBooking] = useState<Booking | null>(null);
   const [blockDialog, setBlockDialog] = useState(false);
+  const [addBookingDialog, setAddBookingDialog] = useState(false);
 
   const loadData = useCallback(() => {
     const props = getProperties();
@@ -149,6 +151,9 @@ export default function HomePage() {
           {cloudStatus === 'offline' && <CloudOffIcon sx={{ fontSize: 16, color: '#FF9800' }} />}
         </Box>
         <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <IconButton onClick={() => setAddBookingDialog(true)} color="primary" size="small" title="Add booking">
+            <AddIcon />
+          </IconButton>
           <IconButton onClick={() => setBlockDialog(true)} color="default" size="small" title="Block dates">
             <BlockIcon />
           </IconButton>
@@ -305,6 +310,16 @@ export default function HomePage() {
         onClose={() => setBlockDialog(false)}
         onSaved={() => {
           setBlockDialog(false);
+          loadData();
+        }}
+      />
+
+      <AddBookingDialog
+        open={addBookingDialog}
+        properties={properties}
+        onClose={() => setAddBookingDialog(false)}
+        onSaved={() => {
+          setAddBookingDialog(false);
           loadData();
         }}
       />

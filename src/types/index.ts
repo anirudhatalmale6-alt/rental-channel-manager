@@ -26,6 +26,8 @@ export interface Booking {
   uid: string;
   lastSynced?: string;
   checklist?: { label: string; checked: boolean }[];
+  email?: string;
+  phone?: string;
 }
 
 export interface BlockedDate {
