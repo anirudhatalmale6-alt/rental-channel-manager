@@ -11,7 +11,6 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { getProperties, getBookings } from '@/lib/store';
 import { Property, Booking, CHANNEL_COLORS, CHANNEL_LABELS } from '@/types';
 import { getNights } from '@/lib/date-utils';
-import PropertySelector from '@/components/PropertySelector';
 import { useCloudSync } from '@/lib/useCloudSync';
 
 function isRealBooking(b: Booking): boolean {
@@ -27,7 +26,6 @@ export default function StatsPage() {
   const { loaded } = useCloudSync();
   const [properties, setProperties] = useState<Property[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [selectedProperty, setSelectedProperty] = useState('all');
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
@@ -37,17 +35,11 @@ export default function StatsPage() {
   }, [loaded]);
 
   const filteredBookings = useMemo(() => {
-    let active = bookings.filter(isRealBooking);
-    if (selectedProperty !== 'all') {
-      active = active.filter(b => b.propertyId === selectedProperty);
-    }
-    // Filter by selected year (check-in year)
-    active = active.filter(b => {
+    return bookings.filter(isRealBooking).filter(b => {
       const y = parseInt(b.checkIn.substring(0, 4));
       return y === selectedYear;
     });
-    return active;
-  }, [bookings, selectedProperty, selectedYear]);
+  }, [bookings, selectedYear]);
 
   const stats = useMemo(() => {
     const totalBookings = filteredBookings.length;
@@ -81,15 +73,6 @@ export default function StatsPage() {
     <Box sx={{ p: 2 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, mt: 1 }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>Statistics</Typography>
-      </Box>
-
-      <Box sx={{ mb: 2 }}>
-        <PropertySelector
-          properties={properties}
-          selectedId={selectedProperty}
-          onChange={setSelectedProperty}
-          showAll
-        />
       </Box>
 
       {/* Year selector */}
