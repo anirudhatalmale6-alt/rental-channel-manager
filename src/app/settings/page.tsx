@@ -216,8 +216,15 @@ export default function SettingsPage() {
                       </IconButton>
                     </Box>
                   )}
+                  {/* Generic export URL (for any other channel like Greengo) */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.3 }}>
+                    <Typography variant="caption" sx={{ color: '#999' }}>→ Generic (all bookings):</Typography>
+                    <IconButton size="small" onClick={() => copyToClipboard(getExportUrl(property.id))}>
+                      <ContentCopyIcon sx={{ fontSize: 14 }} />
+                    </IconButton>
+                  </Box>
                   <Typography variant="caption" sx={{ color: '#bbb', fontSize: 10, display: 'block' }}>
-                    Each URL excludes that platform&apos;s own bookings to avoid conflicts
+                    Platform-specific URLs exclude that platform&apos;s own bookings. Generic includes all.
                   </Typography>
                 </Box>
               </CardContent>
