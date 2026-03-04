@@ -22,9 +22,9 @@ interface Props {
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const WEEKDAYS_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const CELL_W = 28;
-const ROW_H = 36;
-const LABEL_W = 80;
+const CELL_W = 36;
+const ROW_H = 48;
+const LABEL_W = 90;
 
 function toDateStr(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -100,7 +100,7 @@ export default function TimelineView({ year, month, properties, bookings, onMont
             {/* Fixed left column: property labels */}
             <Box sx={{ width: LABEL_W, flexShrink: 0, zIndex: 2, bgcolor: '#fff', borderRight: '1px solid #eee' }}>
               {/* Empty header aligned with day headers */}
-              <Box sx={{ height: 38, borderBottom: '1px solid #eee' }} />
+              <Box sx={{ height: 44, borderBottom: '1px solid #eee' }} />
               {/* Property labels */}
               {properties.map(prop => (
                 <Box
@@ -117,7 +117,7 @@ export default function TimelineView({ year, month, properties, bookings, onMont
                   <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: prop.color, flexShrink: 0 }} />
                   <Typography
                     sx={{
-                      fontSize: 11,
+                      fontSize: 12,
                       fontWeight: 600,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -142,7 +142,7 @@ export default function TimelineView({ year, month, properties, bookings, onMont
               }}
             >
               {/* Day headers */}
-              <Box sx={{ display: 'flex', height: 38, borderBottom: '1px solid #eee', minWidth: totalWidth }}>
+              <Box sx={{ display: 'flex', height: 44, borderBottom: '1px solid #eee', minWidth: totalWidth }}>
                 {days.map(d => (
                   <Box
                     key={d.day}
@@ -156,10 +156,10 @@ export default function TimelineView({ year, month, properties, bookings, onMont
                       bgcolor: d.isToday ? '#E3F2FD' : 'transparent',
                     }}
                   >
-                    <Typography sx={{ fontSize: 8, color: d.isWeekend ? '#E91E63' : '#aaa', lineHeight: 1.2 }}>
+                    <Typography sx={{ fontSize: 10, color: d.isWeekend ? '#E91E63' : '#aaa', lineHeight: 1.3 }}>
                       {d.weekday}
                     </Typography>
-                    <Typography sx={{ fontSize: 11, fontWeight: d.isToday ? 700 : 500, lineHeight: 1.2, color: d.isToday ? '#1976D2' : '#333' }}>
+                    <Typography sx={{ fontSize: 13, fontWeight: d.isToday ? 700 : 500, lineHeight: 1.3, color: d.isToday ? '#1976D2' : '#333' }}>
                       {d.day}
                     </Typography>
                   </Box>
@@ -238,7 +238,7 @@ export default function TimelineView({ year, month, properties, bookings, onMont
                       >
                         <Typography
                           sx={{
-                            fontSize: 9,
+                            fontSize: 11,
                             fontWeight: 600,
                             color: textColor,
                             overflow: 'hidden',
