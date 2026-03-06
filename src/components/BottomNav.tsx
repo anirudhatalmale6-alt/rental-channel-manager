@@ -33,7 +33,10 @@ export default function BottomNav() {
         value={currentIndex === -1 ? 0 : currentIndex}
         onChange={(_, newValue) => router.push(NAV_ITEMS[newValue].path)}
         showLabels
-        sx={{ height: 64 }}
+        sx={{
+          height: 64,
+          '@media (orientation: landscape)': { height: 48 },
+        }}
       >
         {NAV_ITEMS.map(item => (
           <BottomNavigationAction

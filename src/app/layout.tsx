@@ -39,6 +39,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               pb: '80px',
               maxWidth: 600,
               mx: 'auto',
+              '@media (orientation: landscape)': {
+                maxWidth: '100%',
+                pb: '56px',
+              },
             }}>
               {children}
             </Box>
